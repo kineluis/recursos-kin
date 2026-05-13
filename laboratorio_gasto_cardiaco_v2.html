@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Laboratorio de Bombeo Cardíaco v2 — UOH Kinesiología</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: #0f0f12; }
+body { font-family: 'DM Sans', sans-serif; color: #e8e4dc; }
+
+/* ── LAYOUT ── */
+.wrap { display: grid; grid-template-rows: auto 1fr auto; min-height: 100vh; }
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 28px; border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.topbar-left { display: flex; flex-direction: column; gap: 2px; }
+.topbar-title { font-family: 'Space Mono', monospace; font-size: 11px; color: #666; letter-spacing: 0.1em; text-transform: uppercase; }
+.topbar-sub   { font-family: 'Space Mono', monospace; font-size: 10px; color: #444; }
+.formula-pill { font-family: 'Space Mono', monospace; font-size: 12px; color: #e8593a; background: rgba(232,89,58,0.1); padding: 5px 14px; border-radius: 4px; border: 1px solid rgba(232,89,58,0.2); }
+
+.body { display: grid; grid-template-columns: 260px 1fr; }
+.panel-left  { padding: 20px 20px; display: flex; flex-direction: column; align-items: center; gap: 0; border-right: 1px solid rgba(255,255,255,0.07); }
+.panel-right { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; overflow: hidden; }
+
+/* ── HEART ── */
+.heart-stage { width: 180px; height: 180px; position: relative; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+.heart-ring  { position: absolute; border-radius: 50%; border: 1px solid rgba(232,89,58,0.15); animation: ring-pulse 1s ease-out infinite; }
+.heart-ring:nth-child(1){ width: 170px; height: 170px; }
+.heart-ring:nth-child(2){ width: 135px; height: 135px; animation-delay: 0.15s; }
+.heart-ring:nth-child(3){ width: 100px; height: 100px; animation-delay: 0.30s; }
+@keyframes ring-pulse {
+  0%  { opacity:.6; transform:scale(.91); }
+  50% { opacity:.15; transform:scale(1); }
+  100%{ opacity:.6; transform:scale(.91); }
+}
+.heart-anim { transform-origin: center; }
+@keyframes heart-beat {
+  0%  { transform:scale(1); }
+  10% { transform:scale(1.18); }
+  20% { transform:scale(.97); }
+  30% { transform:scale(1.08); }
+  40% { transform:scale(1); }
+  100%{ transform:scale(1); }
+}
+/* warning shimmer when over FCmax */
+@keyframes danger-shimmer { 0%,100%{opacity:1;} 50%{opacity:.55;} }
+.heart-danger { animation: danger-shimmer .4s ease-in-out infinite !important; }
+
+.bpm-block { text-align: center; margin-bottom: 8px; }
+.bpm-val  { font-family:'Space Mono',monospace; font-size:44px; font-weight:700; color:#e8593a; line-height:1; }
+.bpm-unit { font-size:10px; color:#666; letter-spacing:.1em; text-transform:uppercase; margin-top:2px; }
+
+.zone-badge {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:4px 14px; border-radius:20px; margin-bottom:14px;
+  font-size:10px; font-weight:500; letter-spacing:.06em; text-transform:uppercase;
+  transition: all .35s;
+}
+.zone-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+
+/* VS visual */
+.vs-section { width:100%; margin-bottom:12px; }
+.sec-label  { font-size:9px; color:#555; letter-spacing:.12em; text-transform:uppercase; font-family:'Space Mono',monospace; margin-bottom:6px; }
+.vs-bar-bg  { width:100%; height:8px; background:rgba(255,255,255,0.06); border-radius:4px; overflow:hidden; }
+.vs-bar-fill{ height:100%; border-radius:4px; background:linear-gradient(90deg,#378add,#5ac8fa); transition:width .35s, background .35s; }
+.vs-readout { display:flex; justify-content:space-between; align-items:baseline; margin-top:4px; }
+.vs-big     { font-family:'Space Mono',monospace; font-size:22px; font-weight:700; color:#378add; }
+.vs-small   { font-size:10px; color:#555; font-family:'Space Mono',monospace; }
+
+.divider { width:100%; height:1px; background:rgba(255,255,255,0.06); margin:8px 0; }
+
+/* ── FCmax CALCULATOR ── */
+.fcmax-card {
+  width:100%; background:rgba(55,138,221,0.07); border:1px solid rgba(55,138,221,0.2);
+  border-radius:10px; padding:12px 14px; margin-bottom:10px;
+}
+.fcmax-title { font-size:9px; color:#555; letter-spacing:.12em; text-transform:uppercase; font-family:'Space Mono',monospace; margin-bottom:8px; }
+.fcmax-row   { display:flex; align-items:center; gap:8px; }
+.age-label   { font-size:11px; color:#888; white-space:nowrap; }
+.age-input   {
+  width:56px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12);
+  border-radius:6px; color:#e8e4dc; font-family:'Space Mono',monospace; font-size:14px;
+  font-weight:700; text-align:center; padding:4px 6px; outline:none;
+  transition:border-color .2s;
+}
+.age-input:focus { border-color:rgba(55,138,221,0.5); }
+.age-input::-webkit-inner-spin-button { -webkit-appearance:none; }
+.fcmax-results { margin-top:10px; display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.fcmax-res-item{ background:rgba(255,255,255,0.04); border-radius:6px; padding:6px 8px; text-align:center; }
+.fcmax-res-val  { font-family:'Space Mono',monospace; font-size:16px; font-weight:700; }
+.fcmax-res-lbl  { font-size:9px; color:#555; margin-top:1px; }
+.fcmax-eq-note  { font-size:9px; color:#444; text-align:center; margin-top:6px; font-family:'Space Mono',monospace; }
+.btn-apply {
+  width:100%; margin-top:8px; padding:6px; border-radius:6px;
+  border:1px solid rgba(55,138,221,0.3); background:rgba(55,138,221,0.1);
+  color:#378add; font-size:10px; cursor:pointer; font-family:'DM Sans',sans-serif;
+  letter-spacing:.04em; transition:all .2s;
+}
+.btn-apply:hover { background:rgba(55,138,221,0.2); border-color:rgba(55,138,221,0.5); }
+
+/* ── PRESETS ── */
+.preset-row { display:flex; gap:5px; width:100%; }
+.preset-btn {
+  flex:1; padding:6px 2px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);
+  background:rgba(255,255,255,0.03); color:#777; font-size:9px; cursor:pointer;
+  text-align:center; transition:all .2s; font-family:'DM Sans',sans-serif;
+  letter-spacing:.02em;
+}
+.preset-btn:hover { background:rgba(255,255,255,0.08); color:#e8e4dc; border-color:rgba(255,255,255,0.2); }
+
+/* ── RIGHT PANEL ── */
+.sliders-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.slider-block {
+  background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07);
+  border-radius:10px; padding:12px 14px; display:flex; flex-direction:column; gap:8px;
+}
+.slider-head  { display:flex; justify-content:space-between; align-items:baseline; }
+.slider-name  { font-size:11px; color:#888; font-weight:500; }
+.slider-num   { font-family:'Space Mono',monospace; font-size:18px; font-weight:700; }
+.fc-color { color:#e8593a; }
+.vs-color { color:#378add; }
+
+input[type=range] { -webkit-appearance:none; width:100%; height:4px; border-radius:2px; outline:none; cursor:pointer; }
+input[type=range].fc-range { background:linear-gradient(90deg,#e8593a var(--pct,19%),rgba(255,255,255,0.1) var(--pct,19%)); }
+input[type=range].vs-range { background:linear-gradient(90deg,#378add var(--pct,21%),rgba(255,255,255,0.1) var(--pct,21%)); }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:15px; height:15px; border-radius:50%; cursor:pointer; transition:transform .15s; }
+input[type=range].fc-range::-webkit-slider-thumb { background:#e8593a; box-shadow:0 0 0 3px rgba(232,89,58,0.2); }
+input[type=range].vs-range::-webkit-slider-thumb { background:#378add; box-shadow:0 0 0 3px rgba(55,138,221,0.2); }
+input[type=range]:active::-webkit-slider-thumb { transform:scale(1.3); }
+.slider-ticks { display:flex; justify-content:space-between; font-size:8px; color:#3a3a3a; font-family:'Space Mono',monospace; }
+.slider-hint  { font-size:9px; color:#555; text-align:right; min-height:12px; font-style:italic; }
+
+/* GC card */
+.gc-card {
+  background:rgba(232,89,58,0.07); border:1px solid rgba(232,89,58,0.22);
+  border-radius:10px; padding:14px 16px;
+  display:grid; grid-template-columns:1fr auto; gap:8px; align-items:center;
+}
+.gc-left .gc-eq  { font-size:10px; color:#888; font-family:'Space Mono',monospace; margin-bottom:3px; }
+.gc-left .gc-val { font-family:'Space Mono',monospace; font-size:52px; font-weight:700; color:#e8593a; line-height:1; }
+.gc-left .gc-unit{ font-size:12px; color:#888; margin-top:2px; }
+.gc-right { display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
+.gc-warning {
+  display:none; background:rgba(201,62,34,0.15); border:1px solid rgba(201,62,34,0.4);
+  border-radius:6px; padding:5px 10px; font-size:9px; color:#c93e22;
+  font-family:'Space Mono',monospace; text-align:right; line-height:1.4; max-width:140px;
+}
+.gc-warning.visible { display:block; }
+.gc-range-bar { width:100%; }
+.gc-track  { height:5px; background:rgba(255,255,255,0.06); border-radius:3px; position:relative; overflow:visible; }
+.gc-fill   { height:100%; border-radius:3px; transition:width .3s, background .3s; }
+.gc-needle { position:absolute; top:-5px; width:2px; height:15px; background:#fff; border-radius:1px; transform:translateX(-50%); transition:left .3s; }
+.gc-scale-labels { display:flex; justify-content:space-between; font-size:8px; color:#3a3a3a; margin-top:3px; font-family:'Space Mono',monospace; }
+.gc-mini-stats { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:6px; }
+.gc-mini-item  { background:rgba(255,255,255,0.03); border-radius:6px; padding:5px 8px; text-align:center; }
+.gc-mini-val   { font-family:'Space Mono',monospace; font-size:13px; font-weight:700; }
+.gc-mini-lbl   { font-size:8px; color:#555; margin-top:1px; }
+
+/* CHART */
+.chart-wrap { flex:1; min-height:0; display:flex; flex-direction:column; }
+.chart-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+.chart-legend { display:flex; gap:14px; }
+.leg-item { display:flex; align-items:center; gap:5px; font-size:10px; color:#555; }
+.leg-dot  { width:8px; height:8px; border-radius:50%; }
+.chart-canvas-wrap { flex:1; min-height:130px; position:relative; }
+
+/* ALERT BANNER */
+.alert-bar {
+  display:none; align-items:center; gap:10px;
+  background:rgba(201,62,34,0.12); border:1px solid rgba(201,62,34,0.3);
+  border-radius:8px; padding:8px 14px; font-size:10px; color:#c93e22;
+  font-family:'Space Mono',monospace; line-height:1.5;
+}
+.alert-bar.visible { display:flex; }
+.alert-icon { font-size:16px; flex-shrink:0; }
+
+.footer {
+  text-align:center; padding:7px; font-size:9px; color:#2e2e2e;
+  font-family:'Space Mono',monospace; border-top:1px solid rgba(255,255,255,0.04);
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <span class="topbar-title">Laboratorio de Bombeo Cardíaco</span>
+    <span class="topbar-sub">Universidad de O'Higgins · Escuela de Salud · Kinesiología</span>
+  </div>
+  <span class="formula-pill">GC = FC × VS</span>
+</div>
+
+<!-- BODY -->
+<div class="body">
+
+  <!-- ══ PANEL IZQUIERDO ══ -->
+  <div class="panel-left">
+
+    <!-- CORAZÓN ANIMADO -->
+    <div class="heart-stage">
+      <div class="heart-ring"></div>
+      <div class="heart-ring"></div>
+      <div class="heart-ring"></div>
+      <svg id="heartSvg" width="86" height="78" viewBox="0 0 100 90" style="position:relative;z-index:2;">
+        <g class="heart-anim" id="heartGroup">
+          <path fill="#e8593a" d="M50 80 C50 80 5 52 5 27 C5 13 16 6 28 10 C35 12 43 18 50 26 C57 18 65 12 72 10 C84 6 95 13 95 27 C95 52 50 80 50 80Z"/>
+          <path fill="#c93e22" opacity=".4" d="M50 70 C50 70 15 50 15 30 C15 20 24 16 32 19 C38 21 45 26 50 33 C55 26 62 21 68 19 C76 16 85 20 85 30 C85 50 50 70 50 70Z"/>
+          <path fill="rgba(255,180,160,0.18)" d="M30 18 C25 20 20 25 20 30 C20 35 22 40 28 46 C25 39 24 33 26 27 C28 22 30 18 30 18Z"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="bpm-block">
+      <div class="bpm-val" id="bpmDisplay">70</div>
+      <div class="bpm-unit">lat / min</div>
+    </div>
+
+    <div class="zone-badge" id="zoneBadge">
+      <span class="zone-dot" id="zoneDot"></span>
+      <span id="zoneText">Reposo</span>
+    </div>
+
+    <!-- VS visual -->
+    <div class="vs-section">
+      <div class="sec-label">Volumen sistólico</div>
+      <div class="vs-bar-bg"><div class="vs-bar-fill" id="vsBarFill" style="width:21%"></div></div>
+      <div class="vs-readout">
+        <span class="vs-big" id="vsDisplay">70</span>
+        <span class="vs-small">mL/latido</span>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- FC MAX CALCULATOR -->
+    <div class="fcmax-card">
+      <div class="fcmax-title">Calculadora FC máxima · Tanaka</div>
+      <div class="fcmax-row">
+        <span class="age-label">Edad</span>
+        <input type="number" class="age-input" id="ageInput" min="10" max="90" value="25" placeholder="25">
+        <span class="age-label">años</span>
+      </div>
+      <div class="fcmax-results">
+        <div class="fcmax-res-item">
+          <div class="fcmax-res-val" id="fcmaxTanaka" style="color:#378add">190</div>
+          <div class="fcmax-res-lbl">Tanaka (208.75−0.73×edad)</div>
+        </div>
+        <div class="fcmax-res-item">
+          <div class="fcmax-res-val" id="fcmaxFox" style="color:#888">195</div>
+          <div class="fcmax-res-lbl">Fox & Haskell (220−edad)</div>
+        </div>
+      </div>
+      <div class="fcmax-eq-note" id="fcmaxNote">FCmáx ≈ 190 lat/min (25 años)</div>
+      <button class="btn-apply" id="btnApplyFcmax">Aplicar FCmáx al slider →</button>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- PRESETS -->
+    <div class="sec-label" style="align-self:flex-start; margin-bottom:6px;">Presets fisiológicos</div>
+    <div class="preset-row">
+      <div class="preset-btn" onclick="applyPreset(55,60)">Sueño</div>
+      <div class="preset-btn" onclick="applyPreset(70,70)">Reposo</div>
+      <div class="preset-btn" onclick="applyPreset(120,100)">Moderado</div>
+      <div class="preset-btn" onclick="applyPreset(160,130)">Intenso</div>
+      <div class="preset-btn" id="presetMax" onclick="applyPresetMax()">FC máx</div>
+    </div>
+
+  </div>
+
+  <!-- ══ PANEL DERECHO ══ -->
+  <div class="panel-right">
+
+    <!-- SLIDERS -->
+    <div class="sliders-row">
+      <div class="slider-block">
+        <div class="slider-head">
+          <span class="slider-name">Frecuencia Cardíaca (FC)</span>
+          <span class="slider-num fc-color"><span id="fcVal">70</span> <span style="font-size:10px;color:#888;">lat/min</span></span>
+        </div>
+        <input type="range" class="fc-range" id="fcSlider" min="40" max="220" value="70" step="1" oninput="updateAll()">
+        <div class="slider-ticks"><span>40</span><span>90</span><span>130</span><span>175</span><span>220</span></div>
+        <div class="slider-hint" id="fcHint"></div>
+      </div>
+      <div class="slider-block">
+        <div class="slider-head">
+          <span class="slider-name">Volumen Sistólico (VS)</span>
+          <span class="slider-num vs-color"><span id="vsVal">70</span> <span style="font-size:10px;color:#888;">mL</span></span>
+        </div>
+        <input type="range" class="vs-range" id="vsSlider" min="20" max="200" value="70" step="1" oninput="updateAll()">
+        <div class="slider-ticks"><span>20</span><span>65</span><span>110</span><span>155</span><span>200</span></div>
+        <div class="slider-hint" id="vsHint"></div>
+      </div>
+    </div>
+
+    <!-- ALERT BAR -->
+    <div class="alert-bar" id="alertBar">
+      <span class="alert-icon">⚠</span>
+      <span id="alertText">FC supera la FCmáx estimada. El llenado diastólico se acorta → el VS declina → el GC comienza a caer. El corazón no puede eyectar eficientemente a esta frecuencia.</span>
+    </div>
+
+    <!-- GC CARD -->
+    <div class="gc-card">
+      <div class="gc-left">
+        <div class="gc-eq">FC × VS = GC</div>
+        <div class="gc-val" id="gcVal">4.9</div>
+        <div class="gc-unit">L / min</div>
+        <div class="gc-mini-stats">
+          <div class="gc-mini-item">
+            <div class="gc-mini-val" id="gcPct" style="color:#3bbd7a">33%</div>
+            <div class="gc-mini-lbl">% de GC máx teórico</div>
+          </div>
+          <div class="gc-mini-item">
+            <div class="gc-mini-val" id="gcVsContrib" style="color:#378add">70%</div>
+            <div class="gc-mini-lbl">contribución VS vs FC</div>
+          </div>
+        </div>
+      </div>
+      <div class="gc-right">
+        <div class="gc-warning" id="gcWarning">↓ GC declinando<br>FC &gt; FCmáx</div>
+        <div class="gc-range-bar">
+          <div class="gc-track">
+            <div class="gc-fill" id="gcFill" style="width:15%;background:#e8593a;"></div>
+            <div class="gc-needle" id="gcNeedle" style="left:15%;"></div>
+          </div>
+          <div class="gc-scale-labels"><span>0</span><span>10</span><span>20</span><span>30</span><span>40 L/min</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHART -->
+    <div class="chart-wrap">
+      <div class="chart-header">
+        <div class="sec-label" style="margin-bottom:0;">Curva fisiológica: FC vs GC, FC vs VS</div>
+        <div class="chart-legend">
+          <div class="leg-item"><div class="leg-dot" style="background:#e8593a;"></div>GC (L/min)</div>
+          <div class="leg-item"><div class="leg-dot" style="background:#378add;"></div>VS (mL÷10)</div>
+          <div class="leg-item"><div class="leg-dot" style="background:rgba(180,80,80,0.4);"></div>Zona supra-FCmáx</div>
+        </div>
+      </div>
+      <div class="chart-canvas-wrap">
+        <canvas id="gcChart"></canvas>
+      </div>
+    </div>
+
+  </div>
+</div><!-- end body -->
+
+<div class="footer">Fisiología del Ejercicio · KIN3101 · Universidad de O'Higgins · Escuela de Salud · 2025</div>
+</div><!-- end wrap -->
+
+<script>
+/* ════════════════════════════════════════════════
+   STATE
+════════════════════════════════════════════════ */
+let chart;
+let fcMax = 190; // default Tanaka para 25 años
+
+/* ════════════════════════════════════════════════
+   ZONE DEFINITIONS
+════════════════════════════════════════════════ */
+function getZone(fc) {
+  const pct = fc / fcMax;
+  if (fc < 60)    return { label:'Bradicardia / sueño', color:'#5ac8fa', dot:'#5ac8fa', bg:'rgba(90,200,250,0.08)',  border:'rgba(90,200,250,0.2)'  };
+  if (pct < 0.60) return { label:'Reposo',               color:'#3bbd7a', dot:'#3bbd7a', bg:'rgba(59,189,122,0.08)', border:'rgba(59,189,122,0.22)' };
+  if (pct < 0.75) return { label:'Ejercicio suave',      color:'#7ec850', dot:'#7ec850', bg:'rgba(126,200,80,0.08)', border:'rgba(126,200,80,0.22)'  };
+  if (pct < 0.85) return { label:'Ejercicio moderado',   color:'#f0a500', dot:'#f0a500', bg:'rgba(240,165,0,0.08)',  border:'rgba(240,165,0,0.22)'  };
+  if (pct < 1.00) return { label:'Ejercicio intenso',    color:'#e8593a', dot:'#e8593a', bg:'rgba(232,89,58,0.09)',  border:'rgba(232,89,58,0.25)'  };
+  return                 { label:'⚠ Supra-FCmáx',        color:'#c93e22', dot:'#c93e22', bg:'rgba(201,62,34,0.12)',  border:'rgba(201,62,34,0.38)'  };
+}
+
+/* ════════════════════════════════════════════════
+   PHYSIOLOGICAL MODEL
+   VS behaviour:
+   - Rises from rest → ~50-60% VO2max (Frank-Starling + contractility)
+   - Plateaus ~50-60% VO2max to ~FCmax
+   - At FC > FCmax: diastolic filling time ↓ → VS declines
+   We model VS as:
+     • Below plateau_fc  : VS rises linearly from vsRest → vsPeak
+     • plateau_fc → fcMax: VS stable at vsPeak
+     • fc > fcMax        : VS declines (filling time penalty)
+════════════════════════════════════════════════ */
+function physiologicalVS(fc, vsSliderVal) {
+  const pct     = fc / fcMax;
+  const plateau = 0.55; // VS plateaus at ~55% FCmax (≈40-60% VO2max)
+
+  if (fc <= fcMax) {
+    if (pct <= plateau) {
+      // rising phase: rest baseline + Frank-Starling contribution
+      const t = pct / plateau;
+      const vsRest = vsSliderVal * 0.72;
+      return Math.round(vsRest + (vsSliderVal - vsRest) * t);
+    } else {
+      return vsSliderVal; // plateau
+    }
+  } else {
+    // SUPRA FCmax: VS declines due to reduced diastolic filling time
+    // penalty: for every beat/min over FCmax, VS falls ~0.6 mL
+    const excess = fc - fcMax;
+    const penalty = excess * 0.55;
+    const reduced = Math.max(vsSliderVal * 0.55, vsSliderVal - penalty);
+    return Math.round(reduced);
+  }
+}
+
+function gcToBarPct(gc) {
+  return Math.min(100, (gc / 40) * 100);
+}
+
+/* ════════════════════════════════════════════════
+   BEAT ANIMATION
+════════════════════════════════════════════════ */
+function setBeatSpeed(fc) {
+  const svg = document.getElementById('heartGroup');
+  const ms  = Math.round(60000 / Math.min(fc, 220));
+  const dur = (ms * 0.38 / 1000).toFixed(2) + 's';
+  svg.style.animation = `heart-beat ${dur} ease-in-out infinite`;
+  const rings = document.querySelectorAll('.heart-ring');
+  rings.forEach((r, i) => {
+    r.style.animationDuration = (ms / 1000).toFixed(2) + 's';
+    r.style.animationDelay   = (i * ms * 0.15 / 1000).toFixed(2) + 's';
+  });
+  const heartGroup = document.getElementById('heartGroup');
+  if (fc > fcMax) {
+    heartGroup.classList.add('heart-danger');
+  } else {
+    heartGroup.classList.remove('heart-danger');
+  }
+}
+
+/* ════════════════════════════════════════════════
+   MAIN UPDATE
+════════════════════════════════════════════════ */
+function updateAll() {
+  const fc        = parseInt(document.getElementById('fcSlider').value);
+  const vsManual  = parseInt(document.getElementById('vsSlider').value);
+  const vsEff     = physiologicalVS(fc, vsManual);
+  const gc        = parseFloat((fc * vsEff / 1000).toFixed(1));
+  const isSupraMax = fc > fcMax;
+
+  /* ── display ── */
+  document.getElementById('fcVal').textContent     = fc;
+  document.getElementById('vsVal').textContent     = vsEff;
+  document.getElementById('bpmDisplay').textContent = fc;
+  document.getElementById('vsDisplay').textContent  = vsEff;
+  document.getElementById('gcVal').textContent      = gc.toFixed(1);
+
+  /* ── VS bar: shows EFFECTIVE vs (not slider) ── */
+  const vsPct = ((vsEff - 20) / (200 - 20) * 100).toFixed(1);
+  const vsBar = document.getElementById('vsBarFill');
+  vsBar.style.width = vsPct + '%';
+  vsBar.style.background = isSupraMax
+    ? 'linear-gradient(90deg,#c93e22,#e8593a)'
+    : 'linear-gradient(90deg,#378add,#5ac8fa)';
+
+  /* ── slider gradient fills ── */
+  const fcPct  = ((fc - 40) / (220 - 40) * 100).toFixed(1);
+  const vsPctS = ((vsManual - 20) / (200 - 20) * 100).toFixed(1);
+  document.getElementById('fcSlider').style.setProperty('--pct', fcPct + '%');
+  document.getElementById('vsSlider').style.setProperty('--pct', vsPctS + '%');
+
+  /* ── GC bar ── */
+  const barPct = gcToBarPct(gc);
+  document.getElementById('gcFill').style.width      = barPct + '%';
+  document.getElementById('gcFill').style.background = isSupraMax ? '#c93e22' : '#e8593a';
+  document.getElementById('gcNeedle').style.left     = barPct + '%';
+
+  /* ── GC mini stats ── */
+  const gcMax = (fcMax * vsManual / 1000);
+  const pctOfMax = Math.min(100, Math.round((gc / gcMax) * 100));
+  const vsContrib = Math.round((vsEff / (fc + vsEff)) * 100);
+  document.getElementById('gcPct').textContent     = pctOfMax + '%';
+  document.getElementById('gcVsContrib').textContent = vsEff + '/' + fc;
+
+  /* ── zone ── */
+  const zone  = getZone(fc);
+  const badge = document.getElementById('zoneBadge');
+  badge.style.background = zone.bg;
+  badge.style.border     = '1px solid ' + zone.border;
+  badge.style.color      = zone.color;
+  document.getElementById('zoneDot').style.background = zone.dot;
+  document.getElementById('zoneText').textContent     = zone.label;
+
+  /* ── hints ── */
+  const pctFcMax = (fc / fcMax * 100).toFixed(0);
+  document.getElementById('fcHint').textContent = isSupraMax
+    ? '⚠ ' + Math.round(fc - fcMax) + ' lat/min sobre FCmáx → llenado ↓'
+    : pctFcMax + '% de FCmáx (' + fcMax + ')';
+  document.getElementById('vsHint').textContent = isSupraMax
+    ? 'VS efectivo: ' + vsEff + ' mL (penalización diastólica)'
+    : 'VS efectivo: ' + vsEff + ' mL';
+
+  /* ── warning elements ── */
+  document.getElementById('alertBar').classList.toggle('visible', isSupraMax);
+  document.getElementById('gcWarning').classList.toggle('visible', isSupraMax);
+  document.getElementById('alertText').textContent = isSupraMax
+    ? 'FC (' + fc + ') supera FCmáx estimada (' + fcMax + ' lat/min). El tiempo de llenado diastólico se reduce → VS cae a ' + vsEff + ' mL → GC declina. Zona de riesgo fisiológico.'
+    : '';
+
+  /* ── heart animation ── */
+  setBeatSpeed(fc);
+
+  /* ── update curve chart ── */
+  updateCurveChart(fc, vsManual);
+}
+
+/* ════════════════════════════════════════════════
+   CURVE CHART  (FC on x-axis, GC and VS on y)
+════════════════════════════════════════════════ */
+function buildCurveData(vsManual) {
+  const fcPoints = [];
+  const gcCurve  = [];
+  const vsCurve  = [];
+  for (let fc = 40; fc <= 220; fc += 5) {
+    const vsEff = physiologicalVS(fc, vsManual);
+    const gc    = parseFloat((fc * vsEff / 1000).toFixed(2));
+    fcPoints.push(fc);
+    gcCurve.push(gc);
+    vsCurve.push(parseFloat((vsEff / 10).toFixed(1)));
+  }
+  return { fcPoints, gcCurve, vsCurve };
+}
+
+function updateCurveChart(currentFc, vsManual) {
+  if (!chart) return;
+  const { fcPoints, gcCurve, vsCurve } = buildCurveData(vsManual);
+  const vsEff = physiologicalVS(currentFc, vsManual);
+  const gc    = parseFloat((currentFc * vsEff / 1000).toFixed(1));
+
+  chart.data.labels             = fcPoints;
+  chart.data.datasets[0].data   = gcCurve;
+  chart.data.datasets[1].data   = vsCurve;
+  chart.data.datasets[2].data   = [{ x: currentFc, y: gc }];
+  chart.data.datasets[3].data   = [{ x: currentFc, y: vsEff / 10 }];
+
+  // Update supra-FCmax region annotation via dataset background
+  chart.options.plugins.annotation = buildAnnotation();
+  chart.update('none');
+}
+
+function buildAnnotation() {
+  // We'll shade the region FC > fcMax using a box on the chart
+  return {
+    annotations: {
+      maxZone: {
+        type: 'box',
+        xMin: fcMax,
+        xMax: 220,
+        backgroundColor: 'rgba(180,60,40,0.08)',
+        borderColor: 'rgba(201,62,34,0.25)',
+        borderWidth: 1,
+        label: {
+          display: true,
+          content: '▲ FC > FCmáx',
+          color: 'rgba(201,62,34,0.6)',
+          font: { family: 'Space Mono', size: 9 },
+          position: { x: 'start', y: 'start' }
+        }
+      },
+      maxLine: {
+        type: 'line',
+        xMin: fcMax, xMax: fcMax,
+        borderColor: 'rgba(55,138,221,0.4)',
+        borderWidth: 1,
+        borderDash: [4, 3],
+        label: {
+          display: true,
+          content: 'FCmáx',
+          color: 'rgba(55,138,221,0.7)',
+          font: { family: 'Space Mono', size: 8 },
+          position: 'start'
+        }
+      }
+    }
+  };
+}
+
+function initChart() {
+  const ctx = document.getElementById('gcChart').getContext('2d');
+  const { fcPoints, gcCurve, vsCurve } = buildCurveData(70);
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: fcPoints,
+      datasets: [
+        {
+          label: 'GC (L/min)',
+          data: gcCurve,
+          borderColor: '#e8593a',
+          backgroundColor: 'rgba(232,89,58,0.07)',
+          borderWidth: 2, pointRadius: 0, tension: 0.4, fill: true
+        },
+        {
+          label: 'VS/10',
+          data: vsCurve,
+          borderColor: '#378add',
+          backgroundColor: 'transparent',
+          borderWidth: 1.5, pointRadius: 0, tension: 0.4, borderDash: [5,3]
+        },
+        {
+          label: 'FC actual (GC)',
+          data: [],
+          borderColor: '#e8593a',
+          backgroundColor: '#e8593a',
+          pointRadius: 6, pointHoverRadius: 8,
+          showLine: false, type: 'scatter',
+          parsing: { xAxisKey:'x', yAxisKey:'y' }
+        },
+        {
+          label: 'FC actual (VS)',
+          data: [],
+          borderColor: '#378add',
+          backgroundColor: '#378add',
+          pointRadius: 6, pointHoverRadius: 8,
+          showLine: false, type: 'scatter',
+          parsing: { xAxisKey:'x', yAxisKey:'y' }
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        annotation: buildAnnotation(),
+        tooltip: {
+          backgroundColor: 'rgba(15,15,18,0.92)',
+          borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1,
+          titleColor: '#888', bodyColor: '#e8e4dc',
+          titleFont: { family: 'Space Mono', size: 9 },
+          callbacks: {
+            title: items => 'FC = ' + items[0].label + ' lat/min',
+            label: item => {
+              const names = ['GC (L/min)', 'VS/10 (mL÷10)', '● FC actual GC', '● FC actual VS'];
+              const v = typeof item.parsed.y !== 'undefined' ? item.parsed.y.toFixed(1) : '';
+              return ' ' + names[item.datasetIndex] + ': ' + v;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          type: 'linear', min: 40, max: 220,
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: {
+            color: '#444', font: { family: 'Space Mono', size: 8 },
+            stepSize: 20, callback: v => v + ''
+          },
+          title: { display: true, text: 'Frecuencia Cardíaca (lat/min)', color: '#555', font: { family: 'Space Mono', size: 9 } },
+          border: { display: false }
+        },
+        y: {
+          min: 0, max: 30,
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: {
+            color: '#444', font: { family: 'Space Mono', size: 8 },
+            maxTicksLimit: 6, callback: v => v.toFixed(0)
+          },
+          title: { display: true, text: 'GC (L/min)  |  VS÷10', color: '#555', font: { family: 'Space Mono', size: 9 } },
+          border: { display: false }
+        }
+      }
+    },
+    plugins: [] // annotation plugin below
+  });
+}
+
+/* ════════════════════════════════════════════════
+   FCmax CALCULATOR (Tanaka)
+════════════════════════════════════════════════ */
+function updateFcmax() {
+  const age = parseInt(document.getElementById('ageInput').value) || 25;
+  const tanaka = Math.round(208.75 - 0.73 * age);
+  const fox    = Math.round(220 - age);
+  document.getElementById('fcmaxTanaka').textContent = tanaka;
+  document.getElementById('fcmaxFox').textContent    = fox;
+  document.getElementById('fcmaxNote').textContent   = 'FCmáx ≈ ' + tanaka + ' lat/min (' + age + ' años) · Tanaka 2001';
+  fcMax = tanaka;
+  updateAll();
+  rebuildChart();
+}
+
+function rebuildChart() {
+  if (!chart) return;
+  chart.options.plugins.annotation = buildAnnotation();
+  chart.update('none');
+}
+
+document.getElementById('ageInput').addEventListener('input', updateFcmax);
+
+document.getElementById('btnApplyFcmax').addEventListener('click', () => {
+  const tanaka = parseInt(document.getElementById('fcmaxTanaka').textContent);
+  document.getElementById('fcSlider').value = tanaka;
+  updateAll();
+});
+
+/* ════════════════════════════════════════════════
+   PRESETS
+════════════════════════════════════════════════ */
+function applyPreset(fc, vs) {
+  document.getElementById('fcSlider').value = fc;
+  document.getElementById('vsSlider').value = vs;
+  updateAll();
+}
+function applyPresetMax() {
+  document.getElementById('fcSlider').value = fcMax;
+  document.getElementById('vsSlider').value = 110;
+  updateAll();
+}
+
+/* ════════════════════════════════════════════════
+   LOAD Chart.js Annotation plugin then init
+════════════════════════════════════════════════ */
+(function loadAnnotation() {
+  const s = document.createElement('script');
+  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js';
+  s.onload = () => {
+    initChart();
+    updateFcmax();
+    updateAll();
+  };
+  s.onerror = () => {
+    // fallback without annotation
+    initChart();
+    updateFcmax();
+    updateAll();
+  };
+  document.head.appendChild(s);
+})();
+</script>
+</body>
+</html>
