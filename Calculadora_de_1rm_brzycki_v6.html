@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de 1RM - Fórmula de Brzycki</title>
+    <!-- Tailwind CSS para diseño rápido y moderno -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons para iconos limpios -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        /* Personalización de barra de desplazamiento */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <!-- Header / Barra de Navegación -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50 px-4 py-4 sm:px-6">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-blue-600 rounded-xl text-white shadow-lg shadow-blue-500/20">
+                    <i data-lucide="dumbbell" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold tracking-tight text-white flex items-center gap-2">
+                        1RM <span class="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full font-semibold border border-blue-500/30">Brzycki</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">Dosificación de la Carga de Entrenamiento Basada en Fuerza Máxima</p>
+                </div>
+            </div>
+            <div class="text-xs text-slate-400 bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-700/50 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                Ecuaciones metodológicas independientes y corregidas
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- SECCIÓN IZQUIERDA: Formulario y Objetivos (7 columnas en lg) -->
+        <div class="lg:col-span-7 flex flex-col gap-6">
+            
+            <!-- Tarjeta de Entrada de Datos -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl"></div>
+                
+                <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <i data-lucide="calculator" class="w-5 h-5 text-blue-500"></i>
+                    Ingreso de Datos de Entrenamiento (Test de Fuerza Submáximo)
+                </h2>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Peso Levantado -->
+                    <div>
+                        <label for="peso" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Peso Levantado (Kg)</label>
+                        <div class="relative">
+                            <input type="number" id="peso" value="50" min="1" max="1000" step="0.5"
+                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-lg font-bold"
+                                oninput="calcularTodo()">
+                            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-slate-500 font-semibold">kg</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Repeticiones hasta el fallo -->
+                    <div>
+                        <label for="repeticiones" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Repeticiones Realizadas (Fallo)</label>
+                        <div class="relative">
+                            <select id="repeticiones" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-lg font-bold appearance-none cursor-pointer"
+                                onchange="calcularTodo()">
+                                <!-- Llenaremos esto con JS del 2 al 15 según la tabla de Brzycki -->
+                            </select>
+                            <span class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
+                                <i data-lucide="chevron-down" class="w-5 h-5"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 p-3.5 bg-slate-950/60 rounded-xl border border-slate-800/80 text-xs text-slate-400 flex items-start gap-2.5">
+                    <i data-lucide="info" class="w-4 h-4 text-blue-400 shrink-0 mt-0.5"></i>
+                    <p>La <strong>Fórmula de Brzycki</strong> estima tu fuerza máxima teorizando el peso que podrías levantar una sola vez (1RM) basándose en las repeticiones ejecutadas de forma estricta hasta el fallo muscular (válido entre 2 y 15 repeticiones) mediante la constante fija <strong class="text-blue-400">0.0278</strong>.</p>
+                </div>
+            </div>
+
+            <!-- Objetivos y Distribución de Carga -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl flex-grow flex flex-col justify-between">
+                <div>
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
+                        <h3 class="text-base font-bold text-white flex items-center gap-2">
+                            <i data-lucide="target" class="w-5 h-5 text-emerald-500"></i>
+                            Programación de Objetivos de Entrenamiento (1RM × Índice)
+                        </h3>
+                        <span class="text-xs text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full border border-slate-700">Modifica las repeticiones abajo</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        
+                        <!-- Tarjeta Hipertrofia / Trabajo de Carga Ajustable -->
+                        <div class="bg-slate-950/50 border border-slate-800/80 rounded-xl p-4 flex flex-col justify-between hover:border-slate-700 transition">
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-xs font-bold px-2.5 py-1 bg-slate-800 text-slate-300 rounded-md">Zona Objetiva A</span>
+                                    
+                                    <!-- Selector de repeticiones de entrenamiento -->
+                                    <div class="flex items-center gap-1.5">
+                                        <label for="reps-obj-a" class="text-[10px] text-slate-500 font-bold uppercase">Repeticiones:</label>
+                                        <select id="reps-obj-a" class="bg-slate-900 border border-slate-800 rounded px-1.5 py-0.5 text-xs text-amber-400 font-bold focus:outline-none focus:ring-1 focus:ring-blue-500" onchange="calcularTodo()">
+                                            <!-- Generado dinámicamente con JS -->
+                                        </select>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-slate-400 mb-3" id="descripcion-obj-a">Estímulo para desarrollo de sección transversal muscular (hipertrofia o fuerza media).</p>
+                            </div>
+                            <div class="bg-slate-900/80 rounded-lg p-3 border border-slate-800/50 flex items-center justify-between">
+                                <div>
+                                    <div class="text-xs text-slate-500">Peso Sugerido:</div>
+                                    <div class="text-lg font-black text-white" id="peso-hipertrofia">-- kg</div>
+                                </div>
+                                <div class="text-right text-xs text-slate-400">
+                                    <div id="reps-label-a">10 Repeticiones</div>
+                                    <div class="text-slate-500 text-[11px]" id="factor-hipertrofia">Índice: 0.7498</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tarjeta Fuerza Máxima / Trabajo de Fuerza Ajustable -->
+                        <div class="bg-slate-950/50 border border-slate-800/80 rounded-xl p-4 flex flex-col justify-between hover:border-slate-700 transition">
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-xs font-bold px-2.5 py-1 bg-blue-950/50 text-blue-400 rounded-md border border-blue-900/45">Zona Objetiva B</span>
+                                    
+                                    <!-- Selector de repeticiones de entrenamiento -->
+                                    <div class="flex items-center gap-1.5">
+                                        <label for="reps-obj-b" class="text-[10px] text-slate-500 font-bold uppercase">Repeticiones:</label>
+                                        <select id="reps-obj-b" class="bg-slate-900 border border-slate-800 rounded px-1.5 py-0.5 text-xs text-blue-400 font-bold focus:outline-none focus:ring-1 focus:ring-blue-500" onchange="calcularTodo()">
+                                            <!-- Generado dinámicamente con JS -->
+                                        </select>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-slate-400 mb-3" id="descripcion-obj-b">Enfocado en adaptaciones neurales del sistema nervioso y reclutamiento miofibrilar.</p>
+                            </div>
+                            <div class="bg-slate-900/80 rounded-lg p-3 border border-slate-800/50 flex items-center justify-between">
+                                <div>
+                                    <div class="text-xs text-slate-500">Peso Sugerido:</div>
+                                    <div class="text-lg font-black text-white" id="peso-fuerza">-- kg</div>
+                                </div>
+                                <div class="text-right text-xs text-slate-400">
+                                    <div id="reps-label-b">2 Repeticiones</div>
+                                    <div class="text-blue-400/80 text-[11px]" id="factor-fuerza">Índice: 0.9722</div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- ═══ ZONA CLÍNICA: Prescripción para Poblaciones Especiales ═══ -->
+                <div class="mt-6 bg-slate-950/40 border border-violet-500/30 rounded-2xl p-5 space-y-4">
+                    
+                    <!-- Encabezado de sección clínica -->
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <div class="flex items-center gap-2 mb-0.5">
+                                <i data-lucide="stethoscope" class="w-4 h-4 text-violet-400"></i>
+                                <span class="text-sm font-bold text-violet-300">Prescripción para Poblaciones Especiales</span>
+                            </div>
+                            <p class="text-[11px] text-slate-500">Ajuste de carga según perfil clínico del usuario, basado en porcentajes conservadores del 1RM estimado.</p>
+                        </div>
+                        <!-- Selector de perfil clínico -->
+                        <div class="flex flex-col gap-1 min-w-[200px]">
+                            <label class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Perfil del Usuario</label>
+                            <select id="perfil-clinico" onchange="calcularTodo()"
+                                class="bg-slate-900 border border-violet-500/40 rounded-lg px-3 py-2 text-xs text-violet-300 font-bold focus:outline-none focus:ring-1 focus:ring-violet-500 cursor-pointer">
+                                <option value="sano">✅ Usuario Sano / Deportista</option>
+                                <option value="sedentario">🟡 Sedentario / Desentrenado</option>
+                                <option value="fragil">🔴 Fragilidad / Adulto Mayor</option>
+                                <option value="patologia">🟠 Patología Instaurada</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Alerta contextual dinámica según perfil -->
+                    <div id="alerta-clinica" class="rounded-xl p-3.5 text-xs flex items-start gap-2.5 border transition-all duration-300">
+                        <!-- Contenido inyectado por JS -->
+                    </div>
+
+                    <!-- Grid de cargas adaptadas -->
+                    <div class="grid grid-cols-3 gap-3">
+                        
+                        <!-- Carga de inicio / Familiarización -->
+                        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-3 text-center flex flex-col gap-1">
+                            <span class="text-[9px] font-bold uppercase tracking-wider text-slate-500">Inicio / Familiarización</span>
+                            <span class="text-xl font-black" id="carga-inicio">-- kg</span>
+                            <span class="text-[10px] font-semibold" id="pct-inicio" >-- % 1RM</span>
+                            <span class="text-[9px] text-slate-600" id="reps-inicio">-- reps</span>
+                        </div>
+
+                        <!-- Carga de desarrollo / Progresión -->
+                        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-3 text-center flex flex-col gap-1">
+                            <span class="text-[9px] font-bold uppercase tracking-wider text-slate-500">Desarrollo / Progresión</span>
+                            <span class="text-xl font-black" id="carga-desarrollo">-- kg</span>
+                            <span class="text-[10px] font-semibold" id="pct-desarrollo">-- % 1RM</span>
+                            <span class="text-[9px] text-slate-600" id="reps-desarrollo">-- reps</span>
+                        </div>
+
+                        <!-- Carga de mantenimiento / Consolidación -->
+                        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-3 text-center flex flex-col gap-1">
+                            <span class="text-[9px] font-bold uppercase tracking-wider text-slate-500">Consolidación / Mantención</span>
+                            <span class="text-xl font-black" id="carga-mantenc">-- kg</span>
+                            <span class="text-[10px] font-semibold" id="pct-mantenc">-- % 1RM</span>
+                            <span class="text-[9px] text-slate-600" id="reps-mantenc">-- reps</span>
+                        </div>
+
+                    </div>
+
+                    <!-- Nota metodológica dinámica -->
+                    <div id="nota-metodologica" class="text-[11px] text-slate-500 bg-slate-950/50 rounded-lg px-3.5 py-2.5 border border-slate-800/60 leading-relaxed">
+                        <!-- Texto inyectado por JS -->
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <!-- SECCIÓN DERECHA: Pizarra de la Ecuación Paso a Paso (5 columnas en lg) -->
+        <div class="lg:col-span-5 flex flex-col gap-6">
+            
+            <!-- Card de Pizarra Matemática Lateral -->
+            <div class="bg-slate-950 border-2 border-blue-500/40 rounded-2xl shadow-2xl relative overflow-hidden flex flex-col h-full min-h-[500px]">
+                
+                <!-- Encabezado de la pizarra -->
+                <div class="bg-gradient-to-r from-slate-900 to-slate-950 px-5 py-4 border-b border-slate-800 flex items-center justify-between">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                        <span class="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>
+                        <span class="w-2.5 h-2.5 rounded-full bg-green-500"></span>
+                        <span class="ml-1 text-xs font-bold text-slate-300 tracking-wide uppercase">Metodología Deportiva</span>
+                    </div>
+                    <span class="text-xs bg-blue-500/10 text-blue-400 px-2.5 py-0.5 rounded-full border border-blue-500/20 font-mono font-bold">Matemática Fisiológica</span>
+                </div>
+
+                <!-- Cuerpo de la pizarra de tiza/vidrio -->
+                <div class="p-5 sm:p-6 flex-grow flex flex-col justify-between gap-6 relative">
+                    <!-- Cuadrícula de fondo simulando cuaderno matemático -->
+                    <div class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
+
+                    <!-- Paso 1: Fórmulas Generales -->
+                    <div class="relative z-10 space-y-4">
+                        
+                        <!-- Bloque de 1RM Destacado -->
+                        <div class="text-center bg-slate-900/60 border border-slate-800/80 rounded-xl p-4">
+                            <span class="text-xs text-slate-500 font-bold uppercase tracking-widest">1. Fuerza Máxima Estimada (1RM)</span>
+                            <div class="text-4xl font-black text-blue-400 tracking-tight mt-1" id="pizarra-1rm-grande">-- kg</div>
+                            <p class="text-[11px] text-slate-400 mt-1">Línea base teórica de esfuerzo máximo absoluto (100% de intensidad).</p>
+                        </div>
+
+                        <!-- Paso A: Desglose del 1RM -->
+                        <div class="space-y-2">
+                            <div class="flex items-center gap-2">
+                                <span class="w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs font-bold">1</span>
+                                <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Ecuación de Estimación de 1RM</h4>
+                            </div>
+                            
+                            <div class="bg-slate-900/40 p-4 rounded-xl border border-slate-800/40 font-mono text-xs text-slate-300 space-y-2">
+                                <div>
+                                    <span class="text-slate-500">// Fórmula de Estimación de Brzycki:</span>
+                                    <div class="text-slate-200 font-semibold mt-1">1RM = Peso_Levantado / [1.0278 - (0.0278 × Reps_Test)]</div>
+                                </div>
+                                <div class="border-t border-slate-800/80 pt-2 mt-2 space-y-1">
+                                    <span class="text-slate-500">// Sustitución de valores actuales (División):</span>
+                                    <div class="text-amber-400 font-semibold" id="pizarra-reps-sustitucion">1RM = Peso / (1.0278 - (0.0278 × R))</div>
+                                    <div class="text-emerald-400 font-semibold" id="pizarra-denominador-simplificado">1RM = Peso / D</div>
+                                    <div class="text-blue-400 font-bold text-sm" id="pizarra-calculo-final">1RM = F_Kg</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Paso B: Dosificación de Carga A -->
+                        <div class="space-y-2">
+                            <div class="flex items-center gap-2">
+                                <span class="w-5 h-5 rounded-full bg-slate-800 text-slate-300 flex items-center justify-center text-xs font-bold" id="pizarra-p2-num">2</span>
+                                <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider" id="pizarra-p2-title">Peso para Zona Objetiva A</h4>
+                            </div>
+                            <div class="bg-slate-900/40 p-3 rounded-xl border border-slate-800/40 font-mono text-xs text-slate-300">
+                                <div class="text-[11px] text-slate-500 mb-1" id="pizarra-p2-factor">// Factor para repeticiones objetivo</div>
+                                <div class="text-emerald-400 font-semibold mb-1">// Ecuación de Carga: Peso = 1RM × Factor</div>
+                                <div class="text-slate-200" id="pizarra-calc-hipertrofia">Peso = 1RM × F</div>
+                            </div>
+                        </div>
+
+                        <!-- Paso C: Dosificación de Carga B -->
+                        <div class="space-y-2">
+                            <div class="flex items-center gap-2">
+                                <span class="w-5 h-5 rounded-full bg-blue-950 text-blue-400 flex items-center justify-center text-xs font-bold" id="pizarra-p3-num">3</span>
+                                <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider" id="pizarra-p3-title">Peso para Zona Objetiva B</h4>
+                            </div>
+                            <div class="bg-slate-900/40 p-3 rounded-xl border border-slate-800/40 font-mono text-xs text-slate-300">
+                                <div class="text-[11px] text-slate-500 mb-1" id="pizarra-p3-factor">// Factor para repeticiones objetivo</div>
+                                <div class="text-blue-400 font-semibold mb-1">// Ecuación de Carga: Peso = 1RM × Factor</div>
+                                <div class="text-slate-200" id="pizarra-calc-fuerza">Peso = 1RM × F</div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Nota de Advertencia o Tip de uso al pie de la pizarra -->
+                    <div class="bg-blue-500/5 border border-blue-500/20 rounded-xl p-3.5 text-xs text-blue-400 flex items-start gap-2 relative z-10">
+                        <i data-lucide="shield-alert" class="w-4 h-4 shrink-0 mt-0.5 text-blue-400"></i>
+                        <p><strong>Metodología de Carga:</strong> Se calcula el $1RM$ una única vez con la ecuación de estimación (división), y a partir de ese valor se dosifica el peso multiplicándolo por el índice de Brzycki correspondiente a cada rango de esfuerzo.</p>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-950 border-t border-slate-900 py-6 px-4">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+            <div>
+                &copy; 2026 Calculadora Interactiva de Fuerza • Desarrollado bajo la Metodología Deportiva de Brzycki
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="flex items-center gap-1.5">
+                    <i data-lucide="user" class="w-3.5 h-3.5 text-blue-400"></i>
+                    <span class="text-slate-400">Desarrollado por <strong class="text-slate-300">Klgo. Luis Flores Abarca</strong></span>
+                </span>
+                <span class="hover:text-slate-300 transition cursor-help flex items-center gap-1">
+                    <i data-lucide="heart" class="w-3.5 h-3.5 text-red-500"></i> Salud y Alto Rendimiento
+                </span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Script de lógica de la aplicación -->
+    <script>
+        // Función matemática pura para calcular el factor (o índice porcentual de esfuerzo) de Brzycki
+        function calcularFactorBrzycki(reps) {
+            return 1.0278 - (0.0278 * reps);
+        }
+
+        // Al iniciar la página
+        window.addEventListener('DOMContentLoaded', () => {
+            // Inicializar iconos lucide
+            lucide.createIcons();
+            
+            // Rellenar select de repeticiones de la prueba de entrada principal (2 a 15)
+            const selectReps = document.getElementById('repeticiones');
+            selectReps.innerHTML = '';
+            
+            // Generar opciones del 2 al 15
+            for (let r = 2; r <= 15; r++) {
+                const opt = document.createElement('option');
+                opt.value = r;
+                opt.textContent = `${r} Repeticiones (Fallo)`;
+                if (r === 3) { // Valor preseleccionado
+                    opt.selected = true;
+                }
+                selectReps.appendChild(opt);
+            }
+
+            // Rellenar selectores de entrenamiento dinámicos en las tarjetas de objetivos
+            const selectObjA = document.getElementById('reps-obj-a');
+            const selectObjB = document.getElementById('reps-obj-b');
+
+            selectObjA.innerHTML = '';
+            selectObjB.innerHTML = '';
+
+            for (let r = 2; r <= 15; r++) {
+                // Selector A (Hipertrofia por defecto: 10)
+                const optA = document.createElement('option');
+                optA.value = r;
+                optA.textContent = `${r} Reps`;
+                if (r === 10) optA.selected = true;
+                selectObjA.appendChild(optA);
+
+                // Selector B (Fuerza por defecto: 2)
+                const optB = document.createElement('option');
+                optB.value = r;
+                optB.textContent = `${r} Reps`;
+                if (r === 2) optB.selected = true;
+                selectObjB.appendChild(optB);
+            }
+            
+            // Ejecutar el primer cálculo por defecto
+            calcularTodo();
+        });
+
+        // Función principal de cálculo de 1RM y objetivos asociados
+        function calcularTodo() {
+            // Obtener entradas del test principal
+            const peso = parseFloat(document.getElementById('peso').value);
+            const reps = parseInt(document.getElementById('repeticiones').value);
+            
+            // Obtener repeticiones objetivo seleccionadas por el usuario
+            const repsTargetA = parseInt(document.getElementById('reps-obj-a').value) || 10;
+            const repsTargetB = parseInt(document.getElementById('reps-obj-b').value) || 2;
+
+            // Validación elemental de datos
+            if (isNaN(peso) || peso <= 0 || isNaN(reps)) {
+                return;
+            }
+
+            // 1. CÁLCULO DEL 1RM (ECUACIÓN DE ESTIMACIÓN - DIVISIÓN)
+            // 1RM = Peso / [1.0278 - (0.0278 * Reps)]
+            const factorRepeticion = 0.0278 * reps;
+            const denominador = 1.0278 - factorRepeticion;
+            const unRepMax = peso / denominador;
+            
+            const unRepMaxRedondeado = Math.round(unRepMax * 10) / 10;
+            const unRepMaxEntero = Math.round(unRepMax);
+
+            // Mostrar el resultado del 1RM destacado arriba en la pizarra
+            document.getElementById('pizarra-1rm-grande').textContent = `${unRepMaxEntero} kg`;
+
+            // 2. CÁLCULOS DE CARGA DE ENTRENAMIENTO (ECUACIÓN DE DOSIFICACIÓN - MULTIPLICACIÓN)
+            // Peso de Entrenamiento = 1RM * Factor de Brzycki correspondiente
+
+            // Zona Objetiva A (Ajustable, p. ej. Hipertrofia con factor 0.7498 para 10 reps)
+            const factorA = calcularFactorBrzycki(repsTargetA);
+            const pesoA = unRepMax * factorA;
+            const pesoARedond = Math.round(pesoA * 10) / 10;
+            const pesoAEntero = Math.round(pesoA);
+
+            // Zona Objetiva B (Ajustable, p. ej. Fuerza con factor 0.9722 para 2 reps)
+            const factorB = calcularFactorBrzycki(repsTargetB);
+            const pesoB = unRepMax * factorB;
+            const pesoBRedond = Math.round(pesoB * 10) / 10;
+            const pesoBEntero = Math.round(pesoB);
+
+            // Actualizar interfaz gráfica de los objetivos
+            document.getElementById('reps-label-a').textContent = `${repsTargetA} Repeticiones`;
+            document.getElementById('peso-hipertrofia').innerHTML = `${pesoAEntero} kg <span class="text-xs text-slate-500 font-normal">(${pesoARedond} kg)</span>`;
+            document.getElementById('factor-hipertrofia').textContent = `Índice: ${factorA.toFixed(4)}`;
+
+            document.getElementById('reps-label-b').textContent = `${repsTargetB} Repeticiones`;
+            document.getElementById('peso-fuerza').innerHTML = `${pesoBEntero} kg <span class="text-xs text-slate-500 font-normal">(${pesoBRedond} kg)</span>`;
+            document.getElementById('factor-fuerza').textContent = `Índice: ${factorB.toFixed(4)}`;
+
+            // Adaptar textos informativos del objetivo según las repeticiones
+            actualizarTextosInformativos(repsTargetA, repsTargetB);
+
+            // 4. PRESCRIPCIÓN CLÍNICA PARA POBLACIONES ESPECIALES
+            actualizarPrescripcionClinical(unRepMax);
+
+            // 3. ACTUALIZACIÓN DETALLADA DEL PASO A PASO EN LA PIZARRA LATERAL
+            actualizarPizarra(peso, reps, factorRepeticion, denominador, unRepMax, unRepMaxEntero,
+                              repsTargetA, factorA, pesoARedond, pesoAEntero,
+                              repsTargetB, factorB, pesoBRedond, pesoBEntero);
+        }
+
+        // ─── PERFILES CLÍNICOS ───────────────────────────────────────────────────
+        // Cada perfil define tres fases de entrenamiento con:
+        //   pct: porcentaje del 1RM estimado
+        //   reps: rango de repeticiones recomendado
+        //   label: etiqueta de color Tailwind para el valor de carga
+        const PERFILES = {
+            sano: {
+                alerta: {
+                    color: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300',
+                    icono: '✅',
+                    titulo: 'Usuario Sano / Deportista',
+                    texto: 'Sin restricciones especiales. Se aplica la dosificación estándar de las Zonas A y B. El 1RM estimado es una línea base fiable para programar la carga.'
+                },
+                fases: [
+                    { pct: 0.60, reps: '12–15 reps', label: 'text-emerald-400', titulo: 'Acondicionamiento' },
+                    { pct: 0.75, reps: '8–10 reps',  label: 'text-emerald-300', titulo: 'Desarrollo'       },
+                    { pct: 0.85, reps: '5–6 reps',   label: 'text-emerald-200', titulo: 'Alta Intensidad'  }
+                ],
+                nota: '📋 Protocolo estándar ACSM/NSCA. Progresión lineal cada 2–3 semanas una vez alcanzadas las repeticiones máximas del rango con técnica estricta.'
+            },
+            sedentario: {
+                alerta: {
+                    color: 'bg-yellow-500/10 border-yellow-500/30 text-yellow-300',
+                    icono: '🟡',
+                    titulo: 'Sedentario / Desentrenado',
+                    texto: 'El 1RM estimado puede sobreestimar la capacidad funcional real. Se recomienda iniciar con cargas conservadoras y priorizar la técnica. Evitar el fallo muscular las primeras 4 semanas.'
+                },
+                fases: [
+                    { pct: 0.40, reps: '15–20 reps', label: 'text-yellow-400', titulo: 'Familiarización' },
+                    { pct: 0.55, reps: '12–15 reps', label: 'text-yellow-300', titulo: 'Adaptación'      },
+                    { pct: 0.65, reps: '10–12 reps', label: 'text-yellow-200', titulo: 'Progresión'      }
+                ],
+                nota: '📋 Fase 1 (semanas 1–4): énfasis en patrón motor y control neuromuscular. Progresar solo cuando la técnica sea consistente en todas las repeticiones del rango.'
+            },
+            fragil: {
+                alerta: {
+                    color: 'bg-red-500/10 border-red-500/30 text-red-300',
+                    icono: '🔴',
+                    titulo: 'Fragilidad / Adulto Mayor',
+                    texto: '⚠️ En fragilidad, el 1RM directo está contraindicado. Este valor es una estimación orientativa. Priorizar la velocidad de ejecución, el control postural y la seguridad articular. Considerar test funcionales alternativos (5-STS, TUG, prensa isocinética).'
+                },
+                fases: [
+                    { pct: 0.30, reps: '15–20 reps', label: 'text-red-400',  titulo: 'Inicio Seguro'  },
+                    { pct: 0.40, reps: '12–15 reps', label: 'text-red-300',  titulo: 'Progresión Lenta' },
+                    { pct: 0.50, reps: '10–12 reps', label: 'text-orange-300', titulo: 'Mantenimiento' }
+                ],
+                nota: '📋 Criterios EWGSOP2: iniciar con ejercicio de baja intensidad y alta supervisión. Monitorear escala de esfuerzo percibido (Borg 6–20: mantener entre 11–13). Nunca superar RPE 14 en las primeras 8 semanas.'
+            },
+            patologia: {
+                alerta: {
+                    color: 'bg-orange-500/10 border-orange-500/30 text-orange-300',
+                    icono: '🟠',
+                    titulo: 'Patología Instaurada',
+                    texto: '⚠️ La prescripción debe individualizarse según diagnóstico (cardiovascular, osteomuscular, metabólico, neurológico). Los porcentajes mostrados son orientativos y deben ser validados clínicamente. Coordinación con equipo médico es obligatoria.'
+                },
+                fases: [
+                    { pct: 0.35, reps: '15–20 reps', label: 'text-orange-400', titulo: 'Fase Inicial'     },
+                    { pct: 0.50, reps: '12–15 reps', label: 'text-orange-300', titulo: 'Fase de Carga'    },
+                    { pct: 0.60, reps: '10–12 reps', label: 'text-orange-200', titulo: 'Fase Funcional'   }
+                ],
+                nota: '📋 Principio de especificidad patológica: en cardiopatías usar Escala de Borg + FC diana; en patología osteomuscular respetar rangos articulares seguros; en diabetes monitorear glucemia pre/post sesión. Progresión cada 3–4 semanas con reevaluación funcional.'
+            }
+        };
+
+        function actualizarPrescripcionClinical(unRepMax) {
+            const perfilKey = document.getElementById('perfil-clinico').value;
+            const perfil = PERFILES[perfilKey];
+
+            // — Alerta contextual —
+            const alerta = document.getElementById('alerta-clinica');
+            alerta.className = `rounded-xl p-3.5 text-xs flex items-start gap-2.5 border transition-all duration-300 ${perfil.alerta.color}`;
+            alerta.innerHTML = `
+                <span class="text-base shrink-0 mt-0.5">${perfil.alerta.icono}</span>
+                <div><strong class="block mb-0.5">${perfil.alerta.titulo}</strong>${perfil.alerta.texto}</div>
+            `;
+
+            // — Cargas de las tres fases —
+            const ids = ['inicio', 'desarrollo', 'mantenc'];
+            perfil.fases.forEach((fase, i) => {
+                const cargaKg = Math.round(unRepMax * fase.pct);
+                document.getElementById(`carga-${ids[i]}`).textContent   = `${cargaKg} kg`;
+                document.getElementById(`carga-${ids[i]}`).className     = `text-xl font-black ${fase.label}`;
+                document.getElementById(`pct-${ids[i]}`).textContent     = `${Math.round(fase.pct * 100)}% 1RM`;
+                document.getElementById(`pct-${ids[i]}`).className       = `text-[10px] font-semibold ${fase.label}`;
+                document.getElementById(`reps-${ids[i]}`).textContent    = fase.reps;
+            });
+
+            // — Nota metodológica —
+            document.getElementById('nota-metodologica').textContent = perfil.nota;
+        }
+
+        // ─── PIZARRA: PASO A PASO (llamada desde calcularTodo con variables en scope) ─
+        function actualizarPizarra(peso, reps, factorRepeticion, denominador, unRepMax, unRepMaxEntero,
+                                   repsTargetA, factorA, pesoARedond, pesoAEntero,
+                                   repsTargetB, factorB, pesoBRedond, pesoBEntero) {
+
+            // Mostrar cálculos de estimación (Ecuación de división)
+            document.getElementById('pizarra-reps-sustitucion').innerHTML = 
+                `1RM = ${peso} / (1.0278 - (0.0278 × <span class="text-amber-400 font-bold">${reps}</span>))`;
+            
+            document.getElementById('pizarra-denominador-simplificado').innerHTML = 
+                `1RM = ${peso} / (1.0278 - ${factorRepeticion.toFixed(4)}) = ${peso} / <span class="text-emerald-400 font-bold">${denominador.toFixed(4)}</span>`;
+            
+            document.getElementById('pizarra-calculo-final').innerHTML = 
+                `1RM = <span class="text-blue-400 font-extrabold">${unRepMax.toFixed(2)} kg</span> &rarr; <span class="bg-blue-500 text-slate-950 px-1.5 py-0.5 rounded font-bold">${unRepMaxEntero} kg</span>`;
+
+            // Mostrar cálculos de dosificación de entrenamiento (Ecuación de multiplicación)
+            document.getElementById('pizarra-p2-title').textContent = `Dosificación Zona A (${repsTargetA} Reps)`;
+            document.getElementById('pizarra-p2-factor').innerHTML = `// Índice obtenido de la tabla: <span class="text-emerald-400 font-bold">${factorA.toFixed(4)}</span>`;
+            document.getElementById('pizarra-calc-hipertrofia').innerHTML = 
+                `Peso = ${unRepMaxEntero} kg × ${factorA.toFixed(4)} = <span class="text-white font-bold">${pesoARedond.toFixed(1)} kg</span> (&asymp; <span class="text-amber-400 font-bold">${pesoAEntero} kg</span>)`;
+
+            document.getElementById('pizarra-p3-title').textContent = `Dosificación Zona B (${repsTargetB} Reps)`;
+            document.getElementById('pizarra-p3-factor').innerHTML = `// Índice obtenido de la tabla: <span class="text-emerald-400 font-bold">${factorB.toFixed(4)}</span>`;
+            document.getElementById('pizarra-calc-fuerza').innerHTML = 
+                `Peso = ${unRepMaxEntero} kg × ${factorB.toFixed(4)} = <span class="text-white font-bold">${pesoBRedond.toFixed(1)} kg</span> (&asymp; <span class="text-blue-400 font-bold">${pesoBEntero} kg</span>)`;
+        }
+
+        // Actualizar dinámicamente descripciones según el rango de repeticiones seleccionado
+        function actualizarTextosInformativos(repsA, repsB) {
+            const descA = document.getElementById('descripcion-obj-a');
+            const descB = document.getElementById('descripcion-obj-b');
+
+            // Categorizar zona A
+            if (repsA <= 5) {
+                descA.textContent = "Estímulo enfocado primordialmente en la Fuerza Máxima y adaptaciones del sistema nervioso.";
+            } else if (repsA <= 12) {
+                descA.textContent = "Estímulo enfocado en el desarrollo de volumen y sección transversal muscular (Hipertrofia clásica).";
+            } else {
+                descA.textContent = "Estímulo enfocado en la resistencia muscular general, capilarización y metabolismo anaeróbico.";
+            }
+
+            // Categorizar zona B
+            if (repsB <= 5) {
+                descB.textContent = "Enfocado en adaptaciones neurales y reclutamiento óptimo de fibras de contracción rápida.";
+            } else if (repsB <= 12) {
+                descB.textContent = "Rango de hipertrofia muscular estructural con moderada estimulación de fuerza.";
+            } else {
+                descB.textContent = "Enfocado en adaptaciones de resistencia frente a la fatiga a tensiones medias-bajas.";
+            }
+        }
+    </script>
+</body>
+</html>
