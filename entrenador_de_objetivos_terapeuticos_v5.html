@@ -1,0 +1,1583 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Entrenador de Objetivos Terapéuticos · UOH</title>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --clay:     #D97757;
+  --slate:    #141413;
+  --ivory:    #FAF9F5;
+  --oat:      #E3DACC;
+  --olive:    #788C5D;
+  --gray-100: #F0EEE6;
+  --gray-300: #D1CFC5;
+  --gray-500: #87867F;
+  --gray-700: #3D3D3A;
+  --success:  #788C5D;
+  --warning:  #C78E3F;
+  --danger:   #B04A4A;
+  --info:     #5C7CA3;
+  --serif: 'Newsreader', Georgia, 'Times New Roman', serif;
+  --sans:  -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --mono:  ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--ivory);color:var(--slate);line-height:1.6;min-height:100vh}
+
+/* PAGE HEADER */
+.page-head{background:var(--slate);color:#fff;padding:20px 32px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.page-head-left .breadcrumb{font-size:12px;color:var(--gray-300);margin-bottom:6px;font-family:var(--mono);letter-spacing:.03em}
+.page-head-left h1{font-family:var(--serif);font-size:28px;font-weight:500;letter-spacing:-.01em;margin-bottom:4px}
+.page-head-left .lede{font-size:14px;color:var(--gray-300);max-width:720px}
+.uoh-badge{display:inline-block;background:var(--clay);color:#fff;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:3px;margin-left:10px;vertical-align:middle}
+.api-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:4px;padding:5px 10px;font-size:12px;color:#fff;cursor:pointer;transition:background .15s;white-space:nowrap;margin-top:6px}
+.api-badge:hover{background:rgba(255,255,255,.18)}
+.api-badge .provider-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot-anthropic{background:#D97757}
+.dot-google{background:#4285F4}
+.dot-openrouter{background:#34D399}
+
+/* TABS */
+.tabs-bar{background:#fff;border-bottom:1px solid var(--gray-300);display:flex;padding:0 32px}
+.tab-btn{font-family:var(--sans);font-size:13px;font-weight:500;color:var(--gray-500);background:none;border:none;border-bottom:2px solid transparent;padding:14px 18px 12px;cursor:pointer;transition:color .15s,border-color .15s}
+.tab-btn:hover{color:var(--slate)}
+.tab-btn.active{color:var(--clay);border-bottom-color:var(--clay)}
+
+/* LAYOUT */
+.main{max-width:1180px;margin:0 auto;padding:32px 24px}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* ─── REFERENCE TAB ─── */
+.ref-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:32px}
+@media(max-width:780px){.ref-grid{grid-template-columns:1fr}}
+.card{background:#fff;border:1px solid var(--gray-300);border-radius:8px;padding:24px}
+.card-title{font-family:var(--serif);font-size:19px;font-weight:500;margin-bottom:4px}
+.card-sub{font-size:13px;color:var(--gray-500);margin-bottom:20px}
+.formula-row{display:flex;align-items:stretch;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.formula-chip{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 12px;border-radius:6px;min-width:72px;text-align:center}
+.formula-chip .letter{font-family:var(--serif);font-size:24px;font-weight:600;line-height:1}
+.formula-chip .word{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-top:4px;opacity:.85}
+.formula-chip .desc{font-size:10px;color:var(--gray-700);margin-top:3px;line-height:1.3;font-style:italic}
+.fc-a{background:#EBF2FF;color:#2B5797}
+.fc-b{background:#E8F5E0;color:#3B6B1E}
+.fc-c{background:#FEF3E0;color:#7A4F10}
+.fc-d{background:#FDE8E8;color:#7A1F1F}
+.fc-e{background:#EEE6FA;color:#4A1F7A}
+.fc-plus{font-size:20px;color:var(--gray-500);display:flex;align-items:center;padding:0 2px}
+.example-block{background:var(--gray-100);border-left:3px solid var(--olive);border-radius:0 4px 4px 0;padding:12px 16px;font-size:13px;line-height:1.6;margin-bottom:10px}
+.example-block.wrong{border-left-color:var(--danger)}
+.example-block.correct .label{color:var(--olive)}
+.example-block.wrong .label{color:var(--danger)}
+.example-block .label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+span.A{color:#2B5797;font-weight:600}
+span.B{color:#3B6B1E;font-weight:600}
+span.C{color:#7A4F10;font-weight:600}
+span.D{color:#7A1F1F;font-weight:600}
+span.E{color:#4A1F7A;font-weight:600}
+.principles-list{display:flex;flex-direction:column;gap:10px}
+.principle{display:flex;gap:12px;align-items:flex-start;background:var(--gray-100);border-radius:6px;padding:14px}
+.principle-icon{font-size:20px;flex-shrink:0;margin-top:1px}
+.principle-text strong{display:block;font-size:14px;margin-bottom:2px}
+.principle-text span{font-size:13px;color:var(--gray-700)}
+.comparison-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:12px}
+.comparison-table th{text-align:left;padding:8px 12px;background:var(--gray-100);font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-700);border-bottom:1px solid var(--gray-300)}
+.comparison-table td{padding:10px 12px;border-bottom:1px solid var(--gray-100);vertical-align:top}
+.comparison-table tr:last-child td{border-bottom:none}
+.pill-general{background:#EBF2FF;color:#2B5797;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;text-transform:uppercase}
+.pill-specific{background:#E8F5E0;color:#3B6B1E;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;text-transform:uppercase}
+
+/* ─── PRACTICE TAB ─── */
+.practice-layout{display:grid;grid-template-columns:360px 1fr;gap:24px;align-items:start}
+@media(max-width:900px){.practice-layout{grid-template-columns:1fr}}
+.case-nav{display:flex;align-items:center;gap:8px;margin-bottom:16px}
+.case-nav-btn{background:#fff;border:1px solid var(--gray-300);border-radius:4px;padding:6px 12px;font-size:12px;cursor:pointer;color:var(--slate)}
+.case-nav-btn:hover{background:var(--gray-100)}
+.case-nav-btn:disabled{opacity:.35;cursor:not-allowed}
+.case-counter{font-size:13px;color:var(--gray-500);font-family:var(--mono)}
+.case-card{background:#fff;border:1px solid var(--gray-300);border-radius:8px;overflow:hidden;margin-bottom:16px}
+.case-header{background:var(--slate);color:#fff;padding:14px 20px}
+.case-header .case-num{font-family:var(--mono);font-size:10px;color:var(--gray-300);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+.case-header h3{font-family:var(--serif);font-size:17px;font-weight:500}
+.case-body{padding:16px 20px;font-size:13.5px;line-height:1.7;color:var(--gray-700)}
+.case-section{margin-bottom:14px}
+.case-section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--gray-500);margin-bottom:5px}
+.case-data-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.case-datum{background:var(--gray-100);padding:6px 10px;border-radius:4px;font-size:12.5px}
+.case-datum strong{display:block;font-size:10px;color:var(--gray-500);text-transform:uppercase;letter-spacing:.04em;margin-bottom:1px}
+.task-banner{background:var(--clay);color:#fff;padding:12px 20px;font-size:13px;line-height:1.5}
+.task-banner strong{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;opacity:.8}
+
+/* ─── WRITING PANEL ─── */
+.writing-panel{background:#fff;border:1px solid var(--gray-300);border-radius:8px;padding:24px}
+.writing-panel h3{font-family:var(--serif);font-size:20px;font-weight:500;margin-bottom:4px}
+.writing-panel .sub{font-size:13px;color:var(--gray-500);margin-bottom:20px}
+.type-toggle{display:flex;gap:8px;margin-bottom:20px}
+.type-btn{flex:1;padding:10px;border:2px solid var(--gray-300);background:#fff;border-radius:6px;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;text-align:center;transition:all .15s;color:var(--gray-700)}
+.type-btn.active-general{border-color:#2B5797;background:#EBF2FF;color:#2B5797}
+.type-btn.active-specific{border-color:#3B6B1E;background:#E8F5E0;color:#3B6B1E}
+.helper-toggle{font-size:12px;color:var(--info);cursor:pointer;text-decoration:underline;margin-bottom:12px;display:block}
+.helper-box{background:var(--gray-100);border-radius:6px;padding:14px;margin-bottom:16px;display:none}
+.helper-box.open{display:block}
+.helper-box label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-500);margin-bottom:4px;margin-top:10px}
+.helper-box label:first-child{margin-top:0}
+.helper-box input{width:100%;border:1px solid var(--gray-300);border-radius:4px;padding:7px 10px;font-family:var(--sans);font-size:13px;background:#fff;color:var(--slate)}
+.helper-box input:focus{outline:none;border-color:var(--clay)}
+.helper-box .build-btn{margin-top:12px;background:var(--clay);color:#fff;border:none;border-radius:4px;padding:8px 16px;font-size:13px;cursor:pointer;font-weight:600}
+.main-textarea{width:100%;border:2px solid var(--gray-300);border-radius:6px;padding:14px;font-family:var(--sans);font-size:14px;line-height:1.7;min-height:110px;resize:vertical;color:var(--slate)}
+.main-textarea:focus{outline:none;border-color:var(--clay)}
+.char-count{font-size:11px;color:var(--gray-500);font-family:var(--mono);text-align:right;margin-top:4px;margin-bottom:16px}
+.submit-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.submit-btn{background:var(--clay);color:#fff;border:none;border-radius:6px;padding:12px 28px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:opacity .15s}
+.submit-btn:hover{opacity:.88}
+.submit-btn:disabled{opacity:.45;cursor:not-allowed}
+.hint-text{font-size:12px;color:var(--gray-500)}
+.clear-btn{background:none;border:1px solid var(--gray-300);border-radius:6px;padding:10px 16px;font-size:13px;cursor:pointer;color:var(--gray-700)}
+.clear-btn:hover{background:var(--gray-100)}
+
+/* ─── FEEDBACK ─── */
+.feedback-box{margin-top:24px;border-radius:8px;overflow:hidden;border:1px solid var(--gray-300)}
+.feedback-header{display:flex;align-items:center;gap:16px;padding:16px 20px;color:#fff}
+.feedback-header.pass{background:var(--olive)}
+.feedback-header.fail{background:var(--danger)}
+.feedback-header.partial{background:var(--warning)}
+.score-circle{width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.score-circle span{font-family:var(--serif);font-size:22px;font-weight:600;color:#fff}
+.feedback-title{font-family:var(--serif);font-size:18px;font-weight:500}
+.feedback-subtitle{font-size:13px;opacity:.85}
+.feedback-body{padding:20px}
+.fb-section{margin-bottom:20px}
+.fb-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--gray-500);margin-bottom:10px}
+.component-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.comp-card{border-radius:6px;padding:10px 12px;border:1px solid}
+.comp-card.present.correct{background:#F0F7EC;border-color:#B5D4A1;color:#2E5B17}
+.comp-card.present.wrong{background:#FEF4E0;border-color:#E8C87A;color:#6B4B0D}
+.comp-card.absent{background:#FDF0EF;border-color:#F0B8B4;color:#7A1F1F}
+.comp-card.na{background:var(--gray-100);border-color:var(--gray-300);color:var(--gray-500)}
+.comp-header{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.comp-letter{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.comp-card.present.correct .comp-letter{background:var(--olive);color:#fff}
+.comp-card.present.wrong .comp-letter{background:var(--warning);color:#fff}
+.comp-card.absent .comp-letter{background:var(--danger);color:#fff}
+.comp-card.na .comp-letter{background:var(--gray-300);color:var(--gray-500)}
+.comp-name{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.comp-found{font-size:12px;font-family:var(--mono);margin-bottom:3px;word-break:break-word;font-style:italic}
+.comp-comment{font-size:12px;line-height:1.4}
+.warning-box{background:#FEF4E0;border:1px solid #E8C87A;border-radius:6px;padding:12px 16px;font-size:13px;color:#6B4B0D;display:flex;gap:10px;align-items:flex-start;margin-bottom:14px}
+.corrected-box{background:#F0F7EC;border:1px solid #B5D4A1;border-radius:6px;padding:16px;margin-top:4px}
+.corrected-box .corrected-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--olive);margin-bottom:6px}
+.corrected-text{font-family:var(--serif);font-size:15px;color:var(--slate);line-height:1.6;font-style:italic}
+.feedback-general{font-size:14px;line-height:1.65;color:var(--gray-700);background:var(--gray-100);border-radius:6px;padding:14px 16px}
+.next-btn{background:var(--slate);color:#fff;border:none;border-radius:6px;padding:10px 22px;font-size:13px;font-weight:600;cursor:pointer;margin-top:16px}
+.next-btn:hover{background:var(--gray-700)}
+
+/* ─── LOADING ─── */
+.loading-box{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid var(--gray-300);border-radius:8px;padding:24px;margin-top:20px}
+.spinner{width:32px;height:32px;border:3px solid var(--gray-300);border-top-color:var(--clay);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:14px;color:var(--gray-700);font-family:var(--serif);font-style:italic}
+
+/* ─── HISTORY TAB ─── */
+.history-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.history-card{background:#fff;border:1px solid var(--gray-300);border-radius:8px;padding:16px}
+.history-card .hc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.history-card .hc-case{font-weight:600;font-size:13.5px}
+.history-card .hc-score{font-family:var(--serif);font-size:22px;font-weight:600}
+.history-card .hc-score.pass{color:var(--olive)}
+.history-card .hc-score.fail{color:var(--danger)}
+.history-card .hc-score.partial{color:var(--warning)}
+.history-card .hc-text{font-size:12.5px;color:var(--gray-700);line-height:1.5;font-style:italic;margin-bottom:8px;border-left:2px solid var(--gray-300);padding-left:10px}
+.history-card .hc-type{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--gray-500)}
+.history-card .hc-date{font-size:11px;font-family:var(--mono);color:var(--gray-500)}
+.empty-history{text-align:center;padding:60px 20px;color:var(--gray-500)}
+.empty-history p{font-family:var(--serif);font-size:18px;color:var(--gray-500);margin-bottom:8px}
+.empty-history span{font-size:13px}
+.stats-bar{display:flex;gap:20px;background:#fff;border:1px solid var(--gray-300);border-radius:8px;padding:16px 20px;margin-bottom:24px;flex-wrap:wrap;align-items:center}
+.stat{text-align:center}
+.stat-val{font-family:var(--serif);font-size:28px;font-weight:500;color:var(--clay);display:block}
+.stat-lbl{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-500)}
+.clear-history-btn{background:none;border:1px solid var(--gray-300);border-radius:4px;padding:6px 14px;font-size:12px;cursor:pointer;color:var(--gray-500);margin-left:auto}
+.clear-history-btn:hover{background:var(--gray-100);color:var(--danger)}
+
+/* ═══════════════════════════════════════
+   API SETTINGS MODAL
+═══════════════════════════════════════ */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:#fff;border-radius:12px;width:100%;max-width:560px;overflow:hidden;transform:translateY(16px);transition:transform .2s;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal-overlay.open .modal{transform:translateY(0)}
+.modal-head{background:var(--slate);padding:20px 24px;display:flex;align-items:center;justify-content:space-between}
+.modal-head h2{font-family:var(--serif);font-size:20px;font-weight:500;color:#fff}
+.modal-close{background:none;border:none;color:var(--gray-300);font-size:20px;cursor:pointer;line-height:1;padding:4px}
+.modal-close:hover{color:#fff}
+.modal-body{padding:24px}
+.provider-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px}
+.provider-card{border:2px solid var(--gray-300);border-radius:8px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .15s;background:#fff}
+.provider-card:hover{border-color:var(--gray-500)}
+.provider-card.selected-anthropic{border-color:var(--clay);background:#FEF6F2}
+.provider-card.selected-google{border-color:#4285F4;background:#EEF4FF}
+.provider-card.selected-openrouter{border-color:#059669;background:#ECFDF5}
+.provider-logo{font-size:24px;margin-bottom:6px;display:block}
+.provider-name{font-size:12px;font-weight:700;color:var(--slate);display:block}
+.provider-desc{font-size:10px;color:var(--gray-500);margin-top:2px;display:block;line-height:1.3}
+.prov-config{display:none}
+.prov-config.active{display:block}
+.field-group{margin-bottom:16px}
+.field-label{font-size:12px;font-weight:600;color:var(--gray-700);margin-bottom:5px;display:flex;align-items:center;gap:6px}
+.field-label a{color:var(--info);font-weight:400;font-size:11px}
+.field-input{width:100%;border:1px solid var(--gray-300);border-radius:6px;padding:10px 12px;font-family:var(--mono);font-size:13px;color:var(--slate)}
+.field-input:focus{outline:none;border-color:var(--clay)}
+.field-select{width:100%;border:1px solid var(--gray-300);border-radius:6px;padding:10px 12px;font-family:var(--sans);font-size:13px;color:var(--slate);background:#fff;cursor:pointer}
+.field-select:focus{outline:none;border-color:var(--clay)}
+.field-help{font-size:11px;color:var(--gray-500);margin-top:4px;line-height:1.4}
+.save-btn{width:100%;background:var(--clay);color:#fff;border:none;border-radius:6px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans);margin-top:8px}
+.save-btn:hover{opacity:.88}
+.key-status{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:3px 8px;border-radius:10px;margin-left:8px}
+.key-status.saved{background:#DCFCE7;color:#166534}
+.key-status.missing{background:#FEF9C3;color:#854D0E}
+.notice-box{background:var(--gray-100);border-radius:6px;padding:12px 14px;font-size:12px;color:var(--gray-700);line-height:1.5;margin-bottom:16px}
+.notice-box strong{display:block;margin-bottom:2px;font-size:12px}
+.model-chip{display:inline-block;background:var(--gray-100);border:1px solid var(--gray-300);border-radius:4px;padding:2px 7px;font-family:var(--mono);font-size:10px;color:var(--gray-700);margin-top:4px}
+.free-tag{background:#DCFCE7;color:#166534;border-color:#BBF7D0;font-weight:700}
+
+/* ═══════════════════════════════════════
+   MODAL GENERADOR DE CASOS IA
+═══════════════════════════════════════ */
+.gen-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:1100;padding:20px;opacity:0;pointer-events:none;transition:opacity .22s}
+.gen-modal-overlay.open{opacity:1;pointer-events:all}
+.gen-modal{background:#fff;border-radius:14px;width:100%;max-width:600px;overflow:hidden;transform:translateY(20px);transition:transform .22s;box-shadow:0 24px 64px rgba(0,0,0,.28)}
+.gen-modal-overlay.open .gen-modal{transform:translateY(0)}
+.gen-modal-head{background:linear-gradient(135deg,var(--slate) 0%,#2a2a28 100%);padding:22px 26px;display:flex;align-items:center;justify-content:space-between}
+.gen-modal-head-left{display:flex;align-items:center;gap:12px}
+.gen-modal-icon{width:40px;height:40px;border-radius:10px;background:var(--clay);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.gen-modal-head h2{font-family:var(--serif);font-size:19px;font-weight:500;color:#fff;margin-bottom:2px}
+.gen-modal-head p{font-size:12px;color:var(--gray-300)}
+.gen-modal-body{padding:26px}
+.gen-area-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px}
+.gen-area-btn{border:2px solid var(--gray-300);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;transition:all .14s;background:#fff;font-family:var(--sans);font-size:11px;font-weight:600;color:var(--gray-700);line-height:1.3}
+.gen-area-btn:hover{border-color:var(--gray-500);background:var(--gray-100)}
+.gen-area-btn.selected{border-color:var(--clay);background:#FEF6F2;color:var(--clay)}
+.gen-area-btn .area-icon{font-size:18px;display:block;margin-bottom:4px}
+.gen-input-label{font-size:12px;font-weight:700;color:var(--gray-700);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;display:block}
+.gen-input{width:100%;border:2px solid var(--gray-300);border-radius:8px;padding:13px 15px;font-family:var(--sans);font-size:14px;color:var(--slate);transition:border-color .15s;resize:none}
+.gen-input:focus{outline:none;border-color:var(--clay)}
+.gen-input::placeholder{color:var(--gray-500)}
+.gen-options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.gen-option{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--gray-300);border-radius:6px;font-size:12px;color:var(--gray-700);cursor:pointer;background:#fff;transition:all .14s}
+.gen-option:hover{background:var(--gray-100)}
+.gen-option input[type=checkbox]{accent-color:var(--clay);width:14px;height:14px;flex-shrink:0}
+.gen-actions{display:flex;gap:10px;margin-top:20px}
+.gen-submit-btn{flex:1;background:var(--clay);color:#fff;border:none;border-radius:8px;padding:13px 20px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--sans);display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .15s}
+.gen-submit-btn:hover{opacity:.88}
+.gen-submit-btn:disabled{opacity:.45;cursor:not-allowed}
+.gen-cancel-btn{background:#fff;color:var(--gray-700);border:1px solid var(--gray-300);border-radius:8px;padding:13px 20px;font-size:13px;cursor:pointer;font-family:var(--sans)}
+.gen-cancel-btn:hover{background:var(--gray-100)}
+.gen-progress{display:none;padding:20px 26px;border-top:1px solid var(--gray-100)}
+.gen-progress.active{display:block}
+.gen-step{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:13px;color:var(--gray-500);transition:color .2s}
+.gen-step.done{color:var(--olive)}
+.gen-step.active{color:var(--slate);font-weight:600}
+.gen-step .step-icon{width:20px;height:20px;border-radius:50%;border:2px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;transition:all .2s}
+.gen-step.done .step-icon{background:var(--olive);border-color:var(--olive);color:#fff}
+.gen-step.active .step-icon{border-color:var(--clay);color:var(--clay)}
+@keyframes stepSpin{to{transform:rotate(360deg)}}
+.gen-step.active .step-icon::after{content:'';display:block;width:8px;height:8px;border:2px solid var(--clay);border-top-color:transparent;border-radius:50%;animation:stepSpin .6s linear infinite}
+.gen-step.active .step-icon{animation:none}
+/* Botón en nav */
+.case-gen-btn{background:var(--clay);color:#fff;border:none;border-radius:6px;padding:7px 13px;font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:opacity .15s;font-family:var(--sans);white-space:nowrap}
+.case-gen-btn:hover{opacity:.88}
+/* Badge de caso generado por IA */
+.ai-badge{display:inline-flex;align-items:center;gap:4px;background:#EEE6FA;color:#4A1F7A;border:1px solid #D4BAFF;border-radius:4px;padding:2px 7px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-left:6px}
+</style>
+</head>
+<body>
+
+<!-- ═══════ API SETTINGS MODAL ═══════ -->
+<div class="modal-overlay" id="settingsModal" onclick="if(event.target===this)closeSettings()">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>⚙ Configuración de API</h2>
+      <button class="modal-close" onclick="closeSettings()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--gray-700);margin-bottom:16px">Selecciona el proveedor de IA para la evaluación. Las claves API se guardan localmente en tu navegador.</p>
+
+      <!-- Provider selector -->
+      <div class="provider-grid">
+        <div class="provider-card" id="pc-google" onclick="selectProvider('google')">
+          <span class="provider-logo">✦</span>
+          <span class="provider-name">Google AI Studio</span>
+          <span class="provider-desc">Gemini 2.5 / 3 Flash<br>Free tier · 1.5K req/día</span>
+        </div>
+        <div class="provider-card" id="pc-openrouter" onclick="selectProvider('openrouter')">
+          <span class="provider-logo">🔀</span>
+          <span class="provider-name">OpenRouter</span>
+          <span class="provider-desc">27 modelos gratis<br>DeepSeek, Gemma, Nemotron...</span>
+        </div>
+      </div>
+
+      <!-- Google AI Studio config -->
+      <div class="prov-config" id="cfg-google">
+        <div class="notice-box">
+          Obtén tu API key gratis en <strong>aistudio.google.com</strong> → "Get API Key". El tier gratuito incluye ~1,500 req/día con cuota generosa para los modelos Flash.
+        </div>
+        <div class="field-group">
+          <div class="field-label">
+            API Key de Google AI Studio
+            <a href="https://aistudio.google.com/app/apikey" target="_blank">→ Obtener key gratis</a>
+          </div>
+          <input class="field-input" type="password" id="googleKey" placeholder="AIzaSy..." oninput="checkKeys()">
+          <div class="field-help">Se guarda solo en este navegador, nunca se envía a servidores externos.</div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Modelo</div>
+          <select class="field-select" id="googleModel">
+            <optgroup label="── Gemini 2.5 — Estables GA (Recomendados) ──">
+              <option value="gemini-2.5-flash">Gemini 2.5 Flash — Mejor precio/calidad, razonamiento ⭐</option>
+              <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash-Lite — El más rápido y económico</option>
+              <option value="gemini-2.5-pro">Gemini 2.5 Pro — Máxima inteligencia, razonamiento profundo</option>
+            </optgroup>
+            <optgroup label="── Gemini 3 — Más recientes (Preview) ──">
+              <option value="gemini-3-flash-preview">Gemini 3 Flash Preview — Último modelo, alto rendimiento</option>
+              <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash-Lite — Estable GA, velocidad extrema</option>
+            </optgroup>
+          </select>
+        </div>
+      </div>
+
+      <!-- OpenRouter config -->
+      <div class="prov-config" id="cfg-openrouter">
+        <div class="notice-box">
+          Crea cuenta gratis en <strong>openrouter.ai</strong> → "Keys" → New key. Los modelos marcados <span class="model-chip free-tag">FREE</span> tienen 200 req/día y 20 req/min sin costo. <strong>Actualizado: mayo 2026.</strong>
+        </div>
+        <div class="field-group">
+          <div class="field-label">
+            API Key de OpenRouter
+            <a href="https://openrouter.ai/keys" target="_blank">→ Crear key gratis</a>
+          </div>
+          <input class="field-input" type="password" id="openrouterKey" placeholder="sk-or-v1-..." oninput="checkKeys()">
+          <div class="field-help">Se guarda solo en este navegador.</div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Modelo <span class="model-chip free-tag">FREE</span></div>
+          <select class="field-select" id="openrouterModel">
+            <optgroup label="── Tier 1: Alta calidad ──">
+              <option value="deepseek/deepseek-v4-flash:free">DeepSeek V4 Flash — #1 calidad, 1M ctx, razonamiento ⭐</option>
+              <option value="minimax/minimax-m2.5:free">MiniMax M2.5 — calidad 70, 262K ctx, razonamiento</option>
+              <option value="google/gemma-4-31b-it:free">Google Gemma 4 31B — visión + tools, 262K ctx</option>
+              <option value="nvidia/nemotron-3-super-120b-a12b:free">NVIDIA Nemotron 3 Super 120B — MoE, 1M ctx, tools</option>
+              <option value="openai/gpt-oss-120b:free">OpenAI GPT-OSS 120B — open-weight, tools, 131K ctx</option>
+            </optgroup>
+            <optgroup label="── Tier 2: Sólidos y eficientes ──">
+              <option value="google/gemma-4-26b-a4b-it:free">Google Gemma 4 26B MoE — visión + tools, 262K ctx</option>
+              <option value="moonshotai/kimi-k2.6:free">Moonshot Kimi K2.6 — visión + tools, 262K ctx</option>
+              <option value="openrouter/owl-alpha">OpenRouter Owl Alpha — #5 popular, 1M ctx, tools</option>
+              <option value="qwen/qwen3-coder:free">Qwen3 Coder — mejor para JSON estructurado, 1M ctx</option>
+              <option value="nvidia/nemotron-3-nano-30b-a3b:free">NVIDIA Nemotron 3 Nano 30B — rápido, 256K ctx</option>
+              <option value="openai/gpt-oss-20b:free">OpenAI GPT-OSS 20B — liviano, 131K ctx</option>
+            </optgroup>
+            <optgroup label="── Tier 3: Multilingüe / general ──">
+              <option value="z-ai/glm-4.5-air:free">GLM 4.5 Air (Z.ai) — thinking mode, 131K ctx</option>
+              <option value="qwen/qwen3-next-80b-a3b-instruct:free">Qwen3 80B MoE — tools, 262K ctx</option>
+              <option value="meta-llama/llama-3.3-70b-instruct:free">Meta Llama 3.3 70B — multilingüe, 131K ctx</option>
+              <option value="nousresearch/hermes-3-llama-3.1-405b:free">Nous Hermes 3 405B — instrucción, 131K ctx</option>
+              <option value="poolside/laguna-m.1:free">Poolside Laguna M.1 — tools, 262K ctx</option>
+              <option value="poolside/laguna-xs.2:free">Poolside Laguna XS.2 — liviano, 262K ctx</option>
+            </optgroup>
+            <optgroup label="── Razonamiento extendido ──">
+              <option value="nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free">NVIDIA Nemotron Nano Omni 30B — visión + reasoning, 256K</option>
+              <option value="liquid/lfm-2.5-1.2b-thinking:free">LiquidAI LFM2 1.2B Thinking — ultraliviano, 33K ctx</option>
+            </optgroup>
+            <optgroup label="── Router automático ──">
+              <option value="openrouter/free">OpenRouter Free Router — selección automática, 200K ctx</option>
+            </optgroup>
+          </select>
+        </div>
+      </div>
+
+      <button class="save-btn" onclick="saveSettings()">Guardar y cerrar</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ MODAL GENERADOR DE CASOS IA ═══════════════ -->
+<div class="gen-modal-overlay" id="genModal" onclick="if(event.target===this)closeGenModal()">
+  <div class="gen-modal">
+    <div class="gen-modal-head">
+      <div class="gen-modal-head-left">
+        <div class="gen-modal-icon">✦</div>
+        <div>
+          <h2>Generar caso clínico con IA</h2>
+          <p>Describe la patología y la IA construye el caso completo</p>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeGenModal()" style="color:var(--gray-300)">✕</button>
+    </div>
+    <div class="gen-modal-body" id="genModalBody">
+      <!-- Área clínica -->
+      <span class="gen-input-label">1 · Área clínica (opcional)</span>
+      <div class="gen-area-grid">
+        <button class="gen-area-btn" data-area="Musculoesquelético" onclick="toggleArea(this)"><span class="area-icon">🦴</span>Musculo&shy;esquelético</button>
+        <button class="gen-area-btn" data-area="Neurológico" onclick="toggleArea(this)"><span class="area-icon">🧠</span>Neurológico</button>
+        <button class="gen-area-btn" data-area="Cardiorrespiratorio" onclick="toggleArea(this)"><span class="area-icon">🫁</span>Cardio&shy;respiratorio</button>
+        <button class="gen-area-btn" data-area="Deportivo" onclick="toggleArea(this)"><span class="area-icon">⚽</span>Deportivo</button>
+        <button class="gen-area-btn" data-area="Geriátrico" onclick="toggleArea(this)"><span class="area-icon">👴</span>Geriátrico</button>
+        <button class="gen-area-btn" data-area="Pediátrico" onclick="toggleArea(this)"><span class="area-icon">🧒</span>Pediátrico</button>
+      </div>
+
+      <!-- Patología libre -->
+      <span class="gen-input-label">2 · Describe la disfunción o patología</span>
+      <textarea class="gen-input" id="genPatologyInput" rows="3"
+        placeholder="Ej: Síndrome de hombro doloroso post-mastectomía, paciente adulta mayor con miedo al movimiento…&#10;O simplemente: fractura de cadera, EPOC exacerbado, parálisis facial periférica…"></textarea>
+
+      <!-- Opciones -->
+      <div class="gen-options">
+        <label class="gen-option">
+          <input type="checkbox" id="genOptContext" checked>
+          <span>Incluir contexto sociofamiliar</span>
+        </label>
+        <label class="gen-option">
+          <input type="checkbox" id="genOptScales" checked>
+          <span>Usar escalas clínicas validadas</span>
+        </label>
+        <label class="gen-option">
+          <input type="checkbox" id="genOptChilean">
+          <span>Contexto chileno (nombres, lugares)</span>
+        </label>
+        <label class="gen-option">
+          <input type="checkbox" id="genOptComplex">
+          <span>Caso con comorbilidades</span>
+        </label>
+      </div>
+
+      <div class="gen-actions">
+        <button class="gen-cancel-btn" onclick="closeGenModal()">Cancelar</button>
+        <button class="gen-submit-btn" id="genSubmitBtn" onclick="generateCase()">
+          <span id="genBtnIcon">✦</span>
+          <span id="genBtnLabel">Generar caso clínico</span>
+        </button>
+      </div>
+    </div>
+    <!-- Progress steps (hidden until generation starts) -->
+    <div class="gen-progress" id="genProgress">
+      <div class="gen-step" id="gstep1"><div class="step-icon"></div><span>Construyendo datos del paciente…</span></div>
+      <div class="gen-step" id="gstep2"><div class="step-icon"></div><span>Generando hallazgos clínicos y escalas…</span></div>
+      <div class="gen-step" id="gstep3"><div class="step-icon"></div><span>Definiendo metas y tareas pedagógicas…</span></div>
+      <div class="gen-step" id="gstep4"><div class="step-icon"></div><span>Construyendo pistas ABCDE…</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ HEADER ═══════════════════ -->
+<div class="page-head">
+  <div class="page-head-left">
+    <div class="breadcrumb">UOH · Escuela de Salud · Kinesiología</div>
+    <h1>Entrenador de Objetivos Terapéuticos <span class="uoh-badge">IA-powered</span></h1>
+    <p class="lede">Practica la redacción de objetivos generales y específicos en kinesiología con retroalimentación inmediata basada en la fórmula ABCDE. <span style="color:#A8C4FF;font-size:13px">· Se recomienda usar <strong style="color:#fff">Gemini 3.1 Flash-Lite</strong> para evaluaciones rápidas ⚡</span></p>
+    <p style="font-size:11px;color:var(--gray-500);margin-top:8px;font-family:var(--mono)">Creador: Klgo. Luis Flores A. · Universidad de O'Higgins</p>
+  </div>
+  <div style="flex-shrink:0">
+    <button class="api-badge" onclick="openSettings()" id="apiBadge">
+      <span class="provider-dot dot-google" id="provDot"></span>
+      <span id="provLabel">Google / Gemini 2.5 Flash</span>
+      <span style="opacity:.6;font-size:11px">⚙</span>
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════ TABS ═══════════════════ -->
+<div class="tabs-bar">
+  <button class="tab-btn active" onclick="switchTab('ref',this)">📖 Referencia Rápida</button>
+  <button class="tab-btn" onclick="switchTab('practice',this)">✏️ Práctica</button>
+  <button class="tab-btn" onclick="switchTab('history',this)">📊 Mi Historial</button>
+</div>
+
+<div class="main">
+
+<!-- ════════════════════════════════════════════ -->
+<!--            TAB: REFERENCIA                   -->
+<!-- ════════════════════════════════════════════ -->
+<div id="tab-ref" class="tab-panel active">
+  <div class="ref-grid">
+    <div class="card">
+      <div class="card-title">Principios fundamentales</div>
+      <div class="card-sub">¿Qué hace a un objetivo bien redactado?</div>
+      <div class="principles-list">
+        <div class="principle">
+          <div class="principle-icon">🎯</div>
+          <div class="principle-text"><strong>Son RESULTADOS, no procesos</strong><span>Describen lo que el <em>paciente</em> logrará, no lo que hará el kinesiólogo. El verbo debe estar conjugado en futuro y referir al estado final.</span></div>
+        </div>
+        <div class="principle">
+          <div class="principle-icon">📏</div>
+          <div class="principle-text"><strong>Son medibles y comparables</strong><span>La medición está incrustada en el objetivo. "Buen equilibrio" no es medible. "Se sentará sin apoyo por 1 minuto" sí lo es.</span></div>
+        </div>
+        <div class="principle">
+          <div class="principle-icon">🔮</div>
+          <div class="principle-text"><strong>Son predicciones</strong><span>Establecen que el paciente podrá lograr algo en el futuro que <em>no puede lograr ahora</em>.</span></div>
+        </div>
+        <div class="principle">
+          <div class="principle-icon">👤</div>
+          <div class="principle-text"><strong>Centrados en el paciente</strong><span>Expresados en términos de actividades significativas para el paciente, no para lo que el terapeuta considera "mejor".</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">El error más frecuente</div>
+      <div class="card-sub">Proceso vs. resultado — aprende a distinguirlos</div>
+      <div class="example-block wrong">
+        <div class="label">❌ PROCESO (incorrecto)</div>
+        <strong>Aumentar</strong> el ADM en flexión de rodilla izquierda a 110° dentro de 3 semanas.
+        <br><br><span style="font-size:12px;color:var(--danger)">⚠ El infinitivo "Aumentar" indica lo que HACE el kinesiólogo, no lo que logra el paciente.</span>
+      </div>
+      <div class="example-block correct">
+        <div class="label">✅ RESULTADO (correcto)</div>
+        <span class="C">El ADM en la flexión de la rodilla izquierda</span> <span class="B">aumentará</span> a <span class="D">110°</span> dentro de <span class="E">3 semanas</span>.
+        <br><br><span style="font-size:12px;color:var(--olive)">✓ El verbo conjugado "aumentará" indica el estado futuro. Esto es resultado.</span>
+      </div>
+      <div style="background:var(--gray-100);border-radius:6px;padding:12px;font-size:12.5px;color:var(--gray-700);line-height:1.5;margin-top:8px">
+        <strong>Regla de oro:</strong> Si el objetivo empieza con un <strong>infinitivo</strong> (Aumentar, Disminuir, Mejorar, Fortalecer...) → es un proceso. Cámbialo a verbo conjugado en futuro.
+      </div>
+    </div>
+  </div>
+
+  <div class="ref-grid">
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <div class="card-title">Objetivo General</div>
+        <span class="pill-general">largo plazo · actividad / participación</span>
+      </div>
+      <div class="card-sub">Fórmula A + B + C + D + E — enfocado en actividades funcionales</div>
+      <div class="formula-row">
+        <div class="formula-chip fc-a"><div class="letter">A</div><div class="word">Actor</div><div class="desc">El paciente</div></div>
+        <div class="fc-plus">+</div>
+        <div class="formula-chip fc-b"><div class="letter">B</div><div class="word">Acción</div><div class="desc">Verbo conjugado</div></div>
+        <div class="fc-plus">+</div>
+        <div class="formula-chip fc-c"><div class="letter">C</div><div class="word">Condición</div><div class="desc">Contexto / circunstancias</div></div>
+        <div class="fc-plus">+</div>
+        <div class="formula-chip fc-d"><div class="letter">D</div><div class="word">Grado</div><div class="desc">Cuantificación</div></div>
+        <div class="fc-plus">+</div>
+        <div class="formula-chip fc-e"><div class="letter">E</div><div class="word">Plazo</div><div class="desc">Tiempo esperado</div></div>
+      </div>
+      <div class="example-block correct" style="margin-bottom:0">
+        <div class="label">✅ EJEMPLO</div>
+        <span class="A">El Sr. Rick</span> <span class="B">caminará</span> <span class="C">en superficies niveladas con un andador</span> <span class="D">una distancia de 40 pasos en 2 min</span> <span class="E">dentro de 1 semana</span>.
+      </div>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <div class="card-title">Objetivo Específico</div>
+        <span class="pill-specific">corto plazo · deficiencias</span>
+      </div>
+      <div class="card-sub">Fórmula C + B + D + E — enfocado en variables clínicas medibles</div>
+      <div class="formula-row">
+        <div class="formula-chip fc-c"><div class="letter">C</div><div class="word">Condición</div><div class="desc">Variable que cambiará</div></div>
+        <div class="fc-plus">+</div>
+        <div class="formula-chip fc-b"><div class="letter">B</div><div class="word">Acción</div><div class="desc">Verbo conjugado</div></div>
+        <div class="fc-plus">+</div>
+        <div class="formula-chip fc-d"><div class="letter">D</div><div class="word">Grado</div><div class="desc">Valor cuantitativo meta</div></div>
+        <div class="fc-plus">+</div>
+        <div class="formula-chip fc-e"><div class="letter">E</div><div class="word">Plazo</div><div class="desc">Tiempo esperado</div></div>
+      </div>
+      <div class="example-block correct" style="margin-bottom:8px">
+        <div class="label">✅ EJEMPLO 1 — ROM</div>
+        <span class="C">El ADM en la flexión de la rodilla izquierda</span> <span class="B">aumentará</span> a <span class="D">110°</span> <span class="E">dentro de 3 semanas</span>.
+      </div>
+      <div class="example-block correct" style="margin-bottom:0">
+        <div class="label">✅ EJEMPLO 2 — DOLOR</div>
+        <span class="C">El dolor en el hombro derecho</span> <span class="B">disminuirá</span> a <span class="D">2/10 (EVA)</span> <span class="E">dentro de 1 semana</span>.
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:24px">
+    <div class="card-title">Cuadro comparativo: General vs Específico</div>
+    <div class="card-sub">¿Cuándo usar cada tipo?</div>
+    <table class="comparison-table">
+      <thead><tr><th>Criterio</th><th><span class="pill-general">Objetivo General</span></th><th><span class="pill-specific">Objetivo Específico</span></th></tr></thead>
+      <tbody>
+        <tr><td><strong>Plazo</strong></td><td>Largo plazo (semanas a meses)</td><td>Corto plazo (días a semanas)</td></tr>
+        <tr><td><strong>Foco CIF</strong></td><td>Actividad y Participación</td><td>Funciones y Estructuras Corporales</td></tr>
+        <tr><td><strong>Estructura</strong></td><td>A + B + C + D + E (incluye Actor)</td><td>C + B + D + E (sin Actor explícito)</td></tr>
+        <tr><td><strong>Ejemplo de variable</strong></td><td>Caminar, subir escaleras, retorno deportivo</td><td>ROM, fuerza, dolor (EVA), SatO₂, escala Berg</td></tr>
+        <tr><td><strong>Sujeto gramatical</strong></td><td>El paciente (nombre/pronombre)</td><td>La variable clínica ("El dolor...", "La fuerza...")</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!--            TAB: PRÁCTICA                     -->
+<!-- ════════════════════════════════════════════ -->
+<div id="tab-practice" class="tab-panel">
+  <div class="practice-layout">
+    <div>
+      <div class="case-nav">
+        <button class="case-nav-btn" id="prevBtn" onclick="navigateCase(-1)">← Anterior</button>
+        <span class="case-counter" id="caseCounter">Caso 1 / 6</span>
+        <button class="case-nav-btn" id="nextBtn" onclick="navigateCase(1)">Siguiente →</button>
+        <button class="case-gen-btn" onclick="openGenModal()" title="Generar caso clínico con IA">✦ Generar caso</button>
+      </div>
+      <div id="caseCard"></div>
+    </div>
+    <div>
+      <div class="writing-panel">
+        <h3>Redacta el objetivo</h3>
+        <p class="sub" id="writingInstructions">Selecciona el tipo de objetivo y escribe tu propuesta.</p>
+        <div class="type-toggle" id="typeToggle">
+          <button class="type-btn" id="btnGeneral" onclick="selectType('general')">📋 Objetivo General<br><small style="font-weight:400;opacity:.8">ABCDE · Funcional</small></button>
+          <button class="type-btn" id="btnSpecific" onclick="selectType('specific')">🔬 Objetivo Específico<br><small style="font-weight:400;opacity:.8">CBDE · Deficiencia</small></button>
+        </div>
+        <a class="helper-toggle" onclick="toggleHelper()">🛠 Mostrar constructor de componentes (opcional)</a>
+        <div class="helper-box" id="helperBox">
+          <div id="helperFields"></div>
+          <button class="build-btn" onclick="buildFromHelper()">→ Construir objetivo</button>
+        </div>
+        <textarea class="main-textarea" id="objectiveInput" placeholder="Escribe aquí tu objetivo terapéutico..." oninput="updateCharCount()"></textarea>
+        <div class="char-count"><span id="charCount">0</span> caracteres</div>
+        <div class="submit-row">
+          <button class="submit-btn" id="submitBtn" onclick="evaluateObjective()" disabled>Evaluar con IA</button>
+          <button class="clear-btn" onclick="clearAll()">Limpiar</button>
+          <span class="hint-text" id="hintText">Selecciona un tipo de objetivo primero</span>
+        </div>
+        <div id="feedbackContainer"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!--            TAB: HISTORIAL                    -->
+<!-- ════════════════════════════════════════════ -->
+<div id="tab-history" class="tab-panel">
+  <div id="historyContent"></div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+// ═══════════════════════ CASES DATA ═══════════════════════
+const CASES = [
+  {
+    id: 1, title: "Prótesis Total de Rodilla", area: "Musculoesquelético",
+    patient: "Don Manuel, 68 años, pensionado",
+    dx: "Post-PTR izquierda, 3 semanas de evolución",
+    history: "Artrosis severa grado IV de rodilla izquierda. Cirugía sin complicaciones.",
+    findings: [
+      {label:"Flexión rodilla Izq.", value:"75° (limitado)"},
+      {label:"Fuerza cuádriceps", value:"3+/5 (Oxford)"},
+      {label:"Dolor EVA", value:"5/10 en movimiento"},
+      {label:"Marcha", value:"Con bastón, 15 m planos"},
+      {label:"Escala TUG", value:"22 segundos"},
+    ],
+    goal: "El paciente vive en un 2° piso sin ascensor. Su meta personal es poder subir y bajar escaleras de forma independiente.",
+    tasks: [
+      {type:"general", instruction:"Redacta el OBJETIVO GENERAL para que Don Manuel pueda subir escaleras de forma independiente."},
+      {type:"specific", instruction:"Redacta el OBJETIVO ESPECÍFICO para la recuperación del rango articular de flexión de rodilla."},
+    ],
+    hints: {
+      general: "A: Don Manuel · B: subirá · C: escaleras de su edificio (10 peldaños) sin bastón · D: en una subida completa · E: dentro de 6 semanas",
+      specific: "C: El ADM en la flexión de la rodilla izquierda · B: aumentará · D: a 100° · E: dentro de 2 semanas"
+    }
+  },
+  {
+    id: 2, title: "ACV Isquémico · Neurorehabilitación", area: "Neurológico",
+    patient: "Señora Carmen, 62 años, dueña de casa",
+    dx: "ACV isquémico hemisferio derecho, 6 semanas de evolución",
+    history: "Hemiplegia espástica izquierda. Ingresa a rehabilitación ambulatoria.",
+    findings: [
+      {label:"Fuerza MMII izq.", value:"3/5 (MMT)"},
+      {label:"Marcha", value:"Con caminador, < 10 m"},
+      {label:"Escala Berg", value:"22/56 (alto riesgo caída)"},
+      {label:"Spasticidad", value:"Ashworth 2 tobillo izq."},
+      {label:"FIM locomoción", value:"3 – asistencia moderada"},
+    ],
+    goal: "La señora Carmen vive sola y quiere caminar hasta el quiosco del barrio (200 m) para comprar el diario.",
+    tasks: [
+      {type:"general", instruction:"Redacta el OBJETIVO GENERAL para que la señora Carmen camine en la comunidad."},
+      {type:"specific", instruction:"Redacta el OBJETIVO ESPECÍFICO para la mejoría del equilibrio (escala Berg)."},
+    ],
+    hints: {
+      general: "A: La señora Carmen · B: caminará · C: en superficies planas de la comunidad sin asistencia de persona · D: al menos 200 metros · E: dentro de 3 meses",
+      specific: "C: El puntaje en la escala de Berg · B: aumentará · D: a 40 puntos o más · E: dentro de 6 semanas"
+    }
+  },
+  {
+    id: 3, title: "Lumbalgia Crónica Inespecífica", area: "Musculoesquelético",
+    patient: "Don Rodrigo, 45 años, conductor de camión",
+    dx: "Lumbalgia crónica inespecífica, 8 meses de evolución",
+    history: "Sin hallazgos imagenológicos relevantes. Alta kinesiofobia (TSK-11: 38/44).",
+    findings: [
+      {label:"Dolor EVA actual", value:"7/10 (sentado prolongado)"},
+      {label:"Flexión lumbar", value:"20 cm distancia dedo-suelo"},
+      {label:"Resistencia core", value:"McGill Flexor: 28 seg."},
+      {label:"Absentismo laboral", value:"Licencia médica 2 meses"},
+      {label:"Catastrofización", value:"PCS: 36/52 (alta)"},
+    ],
+    goal: "Don Rodrigo necesita volver a conducir su camión por al menos 4 horas seguidas sin dolor incapacitante.",
+    tasks: [
+      {type:"specific", instruction:"Redacta el OBJETIVO ESPECÍFICO para la reducción del dolor lumbar en posición sentada."},
+      {type:"general", instruction:"Redacta el OBJETIVO GENERAL para que Don Rodrigo retome su trabajo como conductor."},
+    ],
+    hints: {
+      specific: "C: El nivel de dolor lumbar en posición sedente · B: disminuirá · D: a 3/10 (EVA) · E: dentro de 4 semanas",
+      general: "A: Don Rodrigo · B: conducirá · C: su camión en ruta de larga distancia sin pausas obligatorias · D: por un mínimo de 4 horas continuas · E: dentro de 8 semanas"
+    }
+  },
+  {
+    id: 4, title: "EPOC GOLD III · Cardiorrespiratorio", area: "Cardiorrespiratorio",
+    patient: "Don Pedro, 71 años, ex minero",
+    dx: "EPOC GOLD III (severo), tabaquismo pasado 40 paquetes/año",
+    history: "2 hospitalizaciones en el último año por exacerbación. Actualmente estable.",
+    findings: [
+      {label:"VEF1", value:"38% del predicho"},
+      {label:"SatO2 basal", value:"90% (FiO2 ambiente)"},
+      {label:"Disnea mMRC", value:"Grado 3"},
+      {label:"Test 6 min marcha", value:"220 metros"},
+      {label:"SGRQ total", value:"62 puntos (alta carga)"},
+    ],
+    goal: "Don Pedro quiere caminar hasta la sede del club de adulto mayor (3 cuadras) sin necesitar parar a descansar.",
+    tasks: [
+      {type:"general", instruction:"Redacta el OBJETIVO GENERAL para que Don Pedro se desplace en la comunidad."},
+      {type:"specific", instruction:"Redacta el OBJETIVO ESPECÍFICO para mejorar la tolerancia al ejercicio (test 6 min marcha)."},
+    ],
+    hints: {
+      general: "A: Don Pedro · B: caminará · C: en terreno plano de la comunidad sin detenerse por disnea · D: al menos 3 cuadras (~240 m) · E: dentro de 8 semanas",
+      specific: "C: La distancia recorrida en el test de caminata de 6 minutos · B: aumentará · D: a 300 metros o más · E: dentro de 6 semanas"
+    }
+  },
+  {
+    id: 5, title: "Esguince de Tobillo Grado II", area: "Deportivo",
+    patient: "Nicolás, 22 años, jugador de fútbol amateur",
+    dx: "Esguince LPAA grado II izquierdo, 10 días de evolución",
+    history: "Mecanismo: inversion forzada en partido. Primera lesión de este tipo.",
+    findings: [
+      {label:"Edema", value:"Moderado, ++"},
+      {label:"Dolor EVA", value:"4/10 en apoyo monopodal"},
+      {label:"Dorsiflexión", value:"5° (normal: ≥10°)"},
+      {label:"Y-Balance Test", value:"No evaluable aún"},
+      {label:"Single-leg hop", value:"No realiza por dolor"},
+    ],
+    goal: "Nicolás quiere volver a jugar fútbol con su equipo en los campeonatos del fin de semana.",
+    tasks: [
+      {type:"specific", instruction:"Redacta el OBJETIVO ESPECÍFICO para recuperar el rango articular de dorsiflexión de tobillo."},
+      {type:"general", instruction:"Redacta el OBJETIVO GENERAL para el retorno deportivo de Nicolás."},
+    ],
+    hints: {
+      specific: "C: El ADM de dorsiflexión del tobillo izquierdo · B: aumentará · D: a 10° o más · E: dentro de 10 días",
+      general: "A: Nicolás · B: participará · C: en partidos de fútbol amateur con contacto · D: completando al menos 45 minutos de juego sin limitación funcional · E: dentro de 6 semanas"
+    }
+  },
+  {
+    id: 6, title: "Post-reparación Manguito Rotador", area: "Musculoesquelético",
+    patient: "Señora Andrea, 52 años, profesora de educación física",
+    dx: "Post-reparación artroscópica tendón supraespinoso derecho, 8 semanas",
+    history: "Rotura parcial de espesor completo. Sin complicaciones postoperatorias.",
+    findings: [
+      {label:"Flexión hombro", value:"60° activa (90° pasiva)"},
+      {label:"Abducción", value:"50° activa"},
+      {label:"Fuerza flexión", value:"2/5 (MMT)"},
+      {label:"Dolor EVA", value:"3/10 en movimiento"},
+      {label:"DASH score", value:"54/100 (alta discapacidad)"},
+    ],
+    goal: "La señora Andrea quiere dictar sus clases de educación física y demostrar ejercicios con brazos elevados sobre la cabeza.",
+    tasks: [
+      {type:"specific", instruction:"Redacta el OBJETIVO ESPECÍFICO para recuperar la fuerza del manguito rotador."},
+      {type:"general", instruction:"Redacta el OBJETIVO GENERAL para que la señora Andrea retome sus clases de educación física."},
+    ],
+    hints: {
+      specific: "C: La fuerza de flexión del hombro derecho · B: aumentará · D: a 4/5 (MMT) · E: dentro de 4 semanas",
+      general: "A: La señora Andrea · B: demostrará · C: ejercicios con elevación de ambos brazos sobre la cabeza frente a sus alumnos · D: completando una sesión de 45 minutos sin limitación funcional · E: dentro de 12 semanas"
+    }
+  }
+];
+
+// ═══════════════════════ STATE ═══════════════════════
+let currentCase = 0;
+let currentType = null;
+let history = JSON.parse(localStorage.getItem('kinObjectives_history') || '[]');
+
+const DEFAULT_CONFIG = {
+  provider: 'google',
+  googleKey: '',
+  googleModel: 'gemini-2.5-flash',
+  openrouterKey: '',
+  openrouterModel: 'deepseek/deepseek-v4-flash:free'
+};
+let apiConfig = JSON.parse(localStorage.getItem('kinObjectives_apiConfig') || JSON.stringify(DEFAULT_CONFIG));
+
+// Migrar modelos obsoletos de gemini-2.5 sin sufijo preview
+// Migrar modelos obsoletos (gemini-2.0, 1.5, o previews con fecha) al equivalente estable actual
+const _obsoleteModels = ['gemini-2.0-flash','gemini-2.0-flash-lite','gemini-1.5-flash','gemini-1.5-pro',
+  'gemini-2.5-flash-preview-05-20','gemini-2.5-flash-lite-preview-06-17','gemini-2.5-pro-preview-06-05',
+  'gemini-2.5-flash-lite-preview-09-2025','gemini-2.5-flash-preview-09-2025'];
+if (_obsoleteModels.includes(apiConfig.googleModel) || (apiConfig.googleModel && apiConfig.googleModel.includes('preview'))) {
+  apiConfig.googleModel = 'gemini-2.5-flash'; // fallback al modelo estable recomendado
+  localStorage.setItem('kinObjectives_apiConfig', JSON.stringify(apiConfig));
+}
+
+// ═══════════════════════ SETTINGS MODAL ═══════════════════════
+function openSettings() {
+  document.getElementById('googleKey').value = apiConfig.googleKey || '';
+  document.getElementById('openrouterKey').value = apiConfig.openrouterKey || '';
+  document.getElementById('googleModel').value = apiConfig.googleModel || 'gemini-2.5-flash';
+  document.getElementById('openrouterModel').value = apiConfig.openrouterModel || 'deepseek/deepseek-v4-flash:free';
+  selectProvider(apiConfig.provider, false);
+  document.getElementById('settingsModal').classList.add('open');
+}
+
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('open');
+}
+
+function selectProvider(p, updateOnly = true) {
+  ['google','openrouter'].forEach(id => {
+    document.getElementById('pc-'+id).className = 'provider-card';
+    document.getElementById('cfg-'+id).classList.remove('active');
+  });
+  document.getElementById('pc-'+p).className = `provider-card selected-${p}`;
+  document.getElementById('cfg-'+p).classList.add('active');
+  if (updateOnly) apiConfig.provider = p;
+}
+
+function saveSettings() {
+  apiConfig.provider = ['google','openrouter'].find(p =>
+    document.getElementById('pc-'+p).className.includes('selected')) || 'google';
+  apiConfig.googleKey = document.getElementById('googleKey').value.trim();
+  apiConfig.googleModel = document.getElementById('googleModel').value;
+  apiConfig.openrouterKey = document.getElementById('openrouterKey').value.trim();
+  apiConfig.openrouterModel = document.getElementById('openrouterModel').value;
+  localStorage.setItem('kinObjectives_apiConfig', JSON.stringify(apiConfig));
+  updateProviderBadge();
+  closeSettings();
+}
+
+function updateProviderBadge() {
+  const dot = document.getElementById('provDot');
+  const label = document.getElementById('provLabel');
+  const gModel = (apiConfig.googleModel||'gemini-2.0-flash')
+    .replace('gemini-','Gemini ')
+    .replace(/-preview-\d{2}-\d{2}$/,' Preview')
+    .replace(/-\d{2}-\d{2}$/,'');
+  const orModel = (apiConfig.openrouterModel||'').split('/').pop().replace(':free','') || 'DeepSeek V4 Flash';
+  const map = {
+    google: {cls:'dot-google', text:`Google / ${gModel}`},
+    openrouter: {cls:'dot-openrouter', text:`OpenRouter / ${orModel}`}
+  };
+  const m = map[apiConfig.provider] || map.google;
+  dot.className = `provider-dot ${m.cls}`;
+  label.textContent = m.text;
+}
+
+function checkKeys() { /* validation placeholder */ }
+
+// ═══════════════════════ TAB MANAGEMENT ═══════════════════════
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'history') renderHistory();
+}
+
+// ═══════════════════════ CASE RENDERING ═══════════════════════
+function renderCase() {
+  const c = CASES[currentCase];
+  document.getElementById('caseCounter').textContent = `Caso ${currentCase+1} / ${CASES.length}`;
+  document.getElementById('prevBtn').disabled = currentCase === 0;
+  document.getElementById('nextBtn').disabled = currentCase === CASES.length-1;
+
+  const findingsHtml = c.findings.map(f =>
+    `<div class="case-datum"><strong>${f.label}</strong>${f.value}</div>`).join('');
+  const tasksHtml = c.tasks.map((t,i) =>
+    `<div class="task-banner">
+      <strong>Tarea ${i+1} · ${t.type==='general'?'📋 Objetivo General':'🔬 Objetivo Específico'}</strong>
+      ${t.instruction}
+    </div>`).join('');
+
+  document.getElementById('caseCard').innerHTML = `
+    <div class="case-card">
+      <div class="case-header">
+        <div class="case-num">Área: ${c.area}${c.isAIGenerated ? ' <span class="ai-badge">✦ IA</span>' : ''}</div>
+        <h3>${c.title}</h3>
+      </div>
+      <div class="case-body">
+        <div class="case-section"><div class="case-section-title">Paciente</div><div>${c.patient}</div><div style="font-size:12.5px;color:var(--gray-500);margin-top:2px">${c.dx}</div></div>
+        <div class="case-section"><div class="case-section-title">Antecedentes</div><div style="font-size:13px">${c.history}</div></div>
+        <div class="case-section"><div class="case-section-title">Hallazgos de evaluación</div><div class="case-data-grid">${findingsHtml}</div></div>
+        <div class="case-section"><div class="case-section-title">Meta del paciente</div><div style="font-size:13px;font-style:italic;color:var(--gray-700)">"${c.goal}"</div></div>
+      </div>
+      ${tasksHtml}
+    </div>`;
+  clearAll();
+}
+
+function navigateCase(dir) {
+  currentCase = Math.max(0, Math.min(CASES.length-1, currentCase+dir));
+  renderCase();
+}
+
+// ═══════════════════════ TYPE SELECTION ═══════════════════════
+function selectType(type) {
+  currentType = type;
+  document.getElementById('btnGeneral').className = 'type-btn' + (type==='general' ? ' active-general' : '');
+  document.getElementById('btnSpecific').className = 'type-btn' + (type==='specific' ? ' active-specific' : '');
+  document.getElementById('submitBtn').disabled = false;
+  document.getElementById('hintText').textContent = type==='general'
+    ? 'Fórmula: Actor + Acción + Condición + Grado + Plazo'
+    : 'Fórmula: Condición + Acción + Grado + Plazo';
+  renderHelperFields(type);
+}
+
+function renderHelperFields(type) {
+  const fields = type==='general'
+    ? [{k:'A',l:'A — Actor (¿quién?)',p:'Ej: El Sr. Manuel, La paciente...'},
+       {k:'B',l:'B — Acción (verbo conjugado)',p:'Ej: caminará, subirá, realizará...'},
+       {k:'C',l:'C — Condición / Contexto',p:'Ej: en superficies planas sin bastón...'},
+       {k:'D',l:'D — Especificación cuantitativa',p:'Ej: 40 pasos, 200 metros, 10 peldaños...'},
+       {k:'E',l:'E — Plazo',p:'Ej: dentro de 4 semanas...'}]
+    : [{k:'C',l:'C — Variable que cambiará',p:'Ej: El ADM de flexión de rodilla izquierda...'},
+       {k:'B',l:'B — Verbo conjugado (aumentará / disminuirá)',p:'Ej: aumentará, disminuirá...'},
+       {k:'D',l:'D — Valor cuantitativo meta',p:'Ej: a 110°, a 4/5 MMT, a 3/10 EVA...'},
+       {k:'E',l:'E — Plazo',p:'Ej: dentro de 3 semanas...'}];
+  document.getElementById('helperFields').innerHTML = fields.map(f =>
+    `<label>${f.l}</label><input type="text" id="hf_${f.k}" placeholder="${f.p}">`).join('');
+}
+
+function toggleHelper() {
+  const box = document.getElementById('helperBox');
+  const open = box.classList.toggle('open');
+  document.querySelector('.helper-toggle').textContent = open
+    ? '🛠 Ocultar constructor'
+    : '🛠 Mostrar constructor de componentes (opcional)';
+}
+
+function buildFromHelper() {
+  if (!currentType) return;
+  const keys = currentType==='general' ? ['A','B','C','D','E'] : ['C','B','D','E'];
+  const parts = keys.map(k => (document.getElementById('hf_'+k)||{value:''}).value.trim()).filter(Boolean);
+  if (!parts.length) return;
+  document.getElementById('objectiveInput').value = parts.join(' ') + '.';
+  updateCharCount();
+}
+
+function updateCharCount() {
+  document.getElementById('charCount').textContent = document.getElementById('objectiveInput').value.length;
+}
+
+function clearAll() {
+  document.getElementById('objectiveInput').value = '';
+  document.getElementById('charCount').textContent = '0';
+  document.getElementById('feedbackContainer').innerHTML = '';
+  currentType = null;
+  document.getElementById('btnGeneral').className = 'type-btn';
+  document.getElementById('btnSpecific').className = 'type-btn';
+  document.getElementById('submitBtn').disabled = true;
+  document.getElementById('hintText').textContent = 'Selecciona un tipo de objetivo primero';
+  document.getElementById('helperBox').classList.remove('open');
+  document.querySelector('.helper-toggle').textContent = '🛠 Mostrar constructor de componentes (opcional)';
+}
+
+
+// ═══════════════════════ GENERADOR DE CASOS IA ═══════════════════════
+
+let selectedGenArea = '';
+let generatedCases = []; // casos extra generados por IA
+
+function openGenModal() {
+  // Reset form
+  document.getElementById('genPatologyInput').value = '';
+  document.querySelectorAll('.gen-area-btn').forEach(b => b.classList.remove('selected'));
+  selectedGenArea = '';
+  document.getElementById('genOptContext').checked = true;
+  document.getElementById('genOptScales').checked = true;
+  document.getElementById('genOptChilean').checked = false;
+  document.getElementById('genOptComplex').checked = false;
+  document.getElementById('genProgress').classList.remove('active');
+  document.getElementById('genModalBody').style.display = '';
+  document.querySelectorAll('.gen-step').forEach(s => { s.classList.remove('done','active'); });
+  resetGenBtn();
+  document.getElementById('genModal').classList.add('open');
+  setTimeout(() => document.getElementById('genPatologyInput').focus(), 250);
+}
+
+function closeGenModal() {
+  document.getElementById('genModal').classList.remove('open');
+}
+
+function toggleArea(btn) {
+  document.querySelectorAll('.gen-area-btn').forEach(b => b.classList.remove('selected'));
+  if (selectedGenArea === btn.dataset.area) {
+    selectedGenArea = ''; // deselect
+  } else {
+    btn.classList.add('selected');
+    selectedGenArea = btn.dataset.area;
+  }
+}
+
+function resetGenBtn() {
+  const btn = document.getElementById('genSubmitBtn');
+  btn.disabled = false;
+  document.getElementById('genBtnIcon').textContent = '✦';
+  document.getElementById('genBtnLabel').textContent = 'Generar caso clínico';
+}
+
+function setGenStep(n) {
+  // n: 1-4; marca anterior como done, actual como active
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById('gstep' + i);
+    el.classList.remove('done', 'active');
+    if (i < n) el.classList.add('done');
+    if (i === n) el.classList.add('active');
+    // update icon for done steps
+    el.querySelector('.step-icon').textContent = i < n ? '✓' : '';
+  }
+}
+
+function buildCaseGenPrompt(pathology, area, opts) {
+  const areaLine = area ? `Área clínica preferida: ${area}.` : 'Elige el área clínica más apropiada para la patología.';
+  const optLines = [
+    opts.context ? '- Incluir contexto sociofamiliar realista (ocupación, entorno doméstico, motivación personal).' : '',
+    opts.scales  ? '- Usar escalas clínicas validadas y relevantes para la patología (EVA, MMT, Berg, TUG, DASH, mMRC, MRC, FIM, SGRQ, etc.).' : '- Los hallazgos pueden ser descriptivos sin escalas formales.',
+    opts.chilean ? '- Usar nombres, lugares y contexto cultural chileno (nombres típicos chilenos, ciudades como Santiago, Valparaíso, Rancagua, etc.).' : '- Nombres y contexto latinoamericano genérico.',
+    opts.complex ? '- Agregar 1-2 comorbilidades relevantes que complejicen el caso (DM2, HTA, obesidad, depresión, etc.).' : ''
+  ].filter(Boolean).join('\n');
+
+  return `Eres un experto en diseño de casos clínicos kinesiológicos para educación universitaria en Chile, especializado en la redacción de objetivos terapéuticos según la fórmula ABCDE de Kettenbach.
+
+Tu tarea es generar UN caso clínico kinesiológico completo, educativamente rico y clínicamente verosímil, basado en la siguiente solicitud del docente:
+
+PATOLOGÍA / DISFUNCIÓN SOLICITADA: "${pathology}"
+${areaLine}
+
+OPCIONES DE GENERACIÓN:
+${optLines}
+
+INSTRUCCIÓN CRÍTICA: Responde ÚNICAMENTE con un objeto JSON válido, sin markdown, sin texto previo ni posterior. El JSON debe tener EXACTAMENTE esta estructura:
+
+{
+  "title": "Título descriptivo del caso (patología + área, ej: 'Fractura de Cadera · Geriátrico')",
+  "area": "Área clínica (Musculoesquelético | Neurológico | Cardiorrespiratorio | Deportivo | Geriátrico | Pediátrico | Otro)",
+  "patient": "Nombre y datos demográficos breves, ej: 'Señora Rosa, 74 años, dueña de casa'",
+  "dx": "Diagnóstico cinesiológico con tiempo de evolución, ej: 'Fractura pertrocantérea cadera derecha, 4 semanas post-RAFI'",
+  "history": "Antecedentes clínicos relevantes en 1-2 frases. Si hay comorbilidades, inclúyelas aquí.",
+  "findings": [
+    {"label": "Nombre de la variable (corto)", "value": "Valor numérico o cualitativo con unidades y escala"},
+    {"label": "...", "value": "..."},
+    {"label": "...", "value": "..."},
+    {"label": "...", "value": "..."},
+    {"label": "...", "value": "..."}
+  ],
+  "goal": "Meta personal del paciente expresada en sus propias palabras (lo que él/ella quiere lograr en su vida diaria).",
+  "tasks": [
+    {"type": "general", "instruction": "Enunciado de la tarea pedagógica para el OBJETIVO GENERAL (largo plazo, actividad/participación, fórmula ABCDE completa)."},
+    {"type": "specific", "instruction": "Enunciado de la tarea pedagógica para el OBJETIVO ESPECÍFICO (corto plazo, deficiencia clínica medible, fórmula CBDE)."}
+  ],
+  "hints": {
+    "general": "Pista para el objetivo general en formato: A: ... · B: ... · C: ... · D: ... · E: ...",
+    "specific": "Pista para el objetivo específico en formato: C: ... · B: ... · D: ... · E: ..."
+  }
+}
+
+REGLAS IMPORTANTES:
+- findings: exactamente 5 hallazgos. Los valores DEBEN incluir unidades y ser clínicamente realistas para la fase descrita (no demasiado buenos ni demasiado malos).
+- hints.general: el verbo B debe estar conjugado en futuro (ej: 'caminará', 'subirá'). Incluir cuantificación concreta en D y plazo en semanas en E.
+- hints.specific: C es la variable clínica que cambiará, B es 'aumentará' o 'disminuirá', D es el valor meta con unidades, E es el plazo.
+- goal: debe ser específico, personal y motivador. No usar lenguaje clínico.
+- El caso debe ser pedagógicamente útil para estudiantes de kinesiología que aprenden a redactar objetivos.`;
+}
+
+async function generateCase() {
+  const pathology = document.getElementById('genPatologyInput').value.trim();
+  if (!pathology) {
+    document.getElementById('genPatologyInput').focus();
+    document.getElementById('genPatologyInput').style.borderColor = 'var(--danger)';
+    setTimeout(() => document.getElementById('genPatologyInput').style.borderColor = '', 1500);
+    return;
+  }
+
+  // Verificar que haya API configurada
+  if (apiConfig.provider === 'google' && !apiConfig.googleKey) {
+    alert('Configura tu API key de Google AI Studio antes de generar casos.\n\nHaz clic en el botón ⚙ en la esquina superior derecha.');
+    return;
+  }
+  if (apiConfig.provider === 'openrouter' && !apiConfig.openrouterKey) {
+    alert('Configura tu API key de OpenRouter antes de generar casos.\n\nHaz clic en el botón ⚙ en la esquina superior derecha.');
+    return;
+  }
+
+  const opts = {
+    context: document.getElementById('genOptContext').checked,
+    scales:  document.getElementById('genOptScales').checked,
+    chilean: document.getElementById('genOptChilean').checked,
+    complex: document.getElementById('genOptComplex').checked,
+  };
+
+  // UI: mostrar progreso
+  const btn = document.getElementById('genSubmitBtn');
+  btn.disabled = true;
+  document.getElementById('genBtnIcon').textContent = '⏳';
+  document.getElementById('genBtnLabel').textContent = 'Generando…';
+  document.getElementById('genModalBody').style.display = 'none';
+  document.getElementById('genProgress').classList.add('active');
+
+  // Simular pasos visuales (la API es una sola llamada, pero simulamos progreso)
+  setGenStep(1);
+  const stepTimers = [
+    setTimeout(() => setGenStep(2), 1400),
+    setTimeout(() => setGenStep(3), 2800),
+    setTimeout(() => setGenStep(4), 4200),
+  ];
+
+  const systemPrompt = buildCaseGenPrompt(pathology, selectedGenArea, opts);
+  const userMsg = `Genera el caso clínico para: "${pathology}"${selectedGenArea ? ' (área: ' + selectedGenArea + ')' : ''}.`;
+
+  try {
+    const raw = await callAPI(systemPrompt, userMsg);
+    stepTimers.forEach(clearTimeout);
+    // Marcar todos los pasos como done
+    for (let i = 1; i <= 4; i++) {
+      const el = document.getElementById('gstep' + i);
+      el.classList.remove('active');
+      el.classList.add('done');
+      el.querySelector('.step-icon').textContent = '✓';
+    }
+
+    const cleaned = extractJSON(raw.trim());
+    const caseData = JSON.parse(cleaned);
+
+    // Validar estructura mínima
+    if (!caseData.title || !caseData.findings || !caseData.tasks || !caseData.hints) {
+      throw new Error('El JSON generado no tiene todos los campos requeridos. Intenta de nuevo.');
+    }
+
+    // Asegurarse que findings tiene 5 items
+    if (!Array.isArray(caseData.findings) || caseData.findings.length < 3) {
+      throw new Error('Los hallazgos clínicos generados son insuficientes. Intenta de nuevo.');
+    }
+
+    // Asignar ID único al caso generado
+    const maxId = Math.max(...CASES.map(c => c.id), ...generatedCases.map(c => c.id), 100);
+    caseData.id = maxId + 1;
+    caseData.isAIGenerated = true;
+
+    // Agregar al array de casos y navegar a él
+    generatedCases.push(caseData);
+    CASES.push(caseData);
+    currentCase = CASES.length - 1;
+
+    closeGenModal();
+    renderCase();
+    // Scroll suave al caso
+    setTimeout(() => {
+      const el = document.getElementById('caseCard');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 150);
+
+    // Toast de confirmación
+    showToast(`✦ Caso generado: "${caseData.title}"`);
+
+  } catch(err) {
+    stepTimers.forEach(clearTimeout);
+    document.getElementById('genProgress').classList.remove('active');
+    document.getElementById('genModalBody').style.display = '';
+    resetGenBtn();
+    const errBox = document.createElement('div');
+    errBox.style.cssText = 'background:#FDF0EF;border:1px solid #F0B8B4;border-radius:8px;padding:14px 16px;margin-top:14px;font-size:13px;color:var(--danger)';
+    errBox.innerHTML = '<strong>⚠ Error al generar el caso:</strong> ' + err.message +
+      '<br><span style="font-size:12px;color:var(--gray-700);margin-top:4px;display:block">Verifica tu API key o intenta con otra descripción.</span>';
+    document.getElementById('genModalBody').appendChild(errBox);
+    setTimeout(() => errBox.remove(), 7000);
+  }
+}
+
+// Toast notification
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--slate);color:#fff;padding:12px 22px;border-radius:8px;font-size:13px;font-weight:600;z-index:2000;box-shadow:0 8px 24px rgba(0,0,0,.25);transition:all .3s;opacity:0;white-space:nowrap';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  requestAnimationFrame(() => { t.style.opacity = '1'; t.style.transform = 'translateX(-50%) translateY(0)'; });
+  setTimeout(() => {
+    t.style.opacity = '0';
+    t.style.transform = 'translateX(-50%) translateY(10px)';
+    setTimeout(() => t.remove(), 300);
+  }, 3500);
+}
+
+// ═══════════════════════ BUILD SYSTEM PROMPT ═══════════════════════
+function buildSystemPrompt() {
+  const c = CASES[currentCase];
+  return `Eres un evaluador experto en redacción de objetivos terapéuticos kinesiológicos, basado en la metodología de Kettenbach G. (Essential components of a well-written goal, ABCDE) y el enfoque SMART de rehabilitación de Bovend'Eerdt et al. (Clin Rehabil 2009).
+
+El estudiante debe redactar un OBJETIVO ${currentType==='general'?'GENERAL':'ESPECÍFICO'}.
+
+FÓRMULAS DE REFERENCIA:
+- Objetivo GENERAL (largo plazo, actividad/participación): A (Actor/paciente) + B (Acción verbal conjugada en futuro) + C (Condición/contexto) + D (Especificación cuantitativa) + E (Plazo temporal)
+- Objetivo ESPECÍFICO (corto plazo, deficiencias): C (Condición = variable clínica que cambiará) + B (Verbo conjugado en futuro: aumentará, disminuirá, mejorará) + D (Valor cuantitativo meta con unidades) + E (Plazo temporal)
+
+CRITERIOS CRÍTICOS DE EVALUACIÓN:
+1. RESULTADO vs PROCESO: Si empieza con infinitivo (Aumentar, Disminuir, Mejorar...) = PROCESO = error grave. El verbo debe ser conjugado (ej: "caminará", "disminuirá").
+2. CONCRETO y MEDIBLE: Debe incluir valores numéricos con unidades claras (°, m, rep, EVA, MMT...).
+3. PLAZO: Debe especificar el tiempo (días, semanas, meses).
+
+CONTEXTO DEL CASO EVALUADO:
+Paciente: ${c.patient}
+Diagnóstico: ${c.dx}
+Hallazgos Clínicos: ${c.findings.map(f=>f.label+': '+f.value).join(' | ')}
+Meta deseada: ${c.goal}
+
+INSTRUCCIÓN DE RETORNO OBLIGATORIA:
+Debes responder ÚNICAMENTE con un objeto JSON válido. No uses markdown de bloques de código (como \`\`\`json), no agregues comentarios conversacionales al principio ni al final. La respuesta debe estructurarse estrictamente igual a este ejemplo de referencia, rellenando con tus datos de análisis:
+
+{
+  "puntaje": 85,
+  "componentes": {
+    "A_actor": {
+      "presente": true,
+      "texto": "El paciente",
+      "correcto": true,
+      "comentario": "Se identifica adecuadamente al paciente como actor del objetivo."
+    },
+    "B_accion": {
+      "presente": true,
+      "texto": "subirá",
+      "correcto": true,
+      "comentario": "El verbo se encuentra conjugado en futuro de manera correcta."
+    },
+    "C_condicion": {
+      "presente": true,
+      "texto": "las escaleras de su hogar sin asistencia",
+      "correcto": true,
+      "comentario": "La condición establece adecuadamente el contexto de actividad."
+    },
+    "D_especificacion": {
+      "presente": true,
+      "texto": "un tramo de 10 peldaños",
+      "correcto": true,
+      "comentario": "Se cuantifica de forma medible la meta funcional."
+    },
+    "E_plazo": {
+      "presente": true,
+      "texto": "dentro de 4 semanas",
+      "correcto": true,
+      "comentario": "El plazo temporal está claramente definido."
+    }
+  },
+  "es_resultado": true,
+  "es_proceso": false,
+  "error_tipico": "El objetivo utiliza un infinitivo de forma inapropiada.",
+  "objetivo_corregido": "El Sr. Manuel subirá de forma autónoma escaleras de hasta 10 peldaños dentro de 4 semanas.",
+  "feedback_general": "Excelente redacción. Cumple con la totalidad de los criterios funcionales planteados y se alinea con la meta del paciente.",
+  "aprobado": true
+}
+
+Nota para objetivos específicos (C+B+D+E): El componente 'A_actor' debe tener 'presente': null, 'texto': null, 'correcto': null, y 'comentario': "No aplica para objetivos específicos".`;
+}
+
+// ═══════════════════════ API CALL ROUTER ═══════════════════════
+async function callAPI(systemPrompt, userContent) {
+  const p = apiConfig.provider;
+
+  if (p === 'google') {
+    const key = apiConfig.googleKey;
+    if (!key) throw new Error('Falta la API key de Google AI Studio. Configúrala en ⚙ Configuración de API.');
+    const model = apiConfig.googleModel || 'gemini-2.5-flash';
+
+    // Nota: responseMimeType "application/json" solo funciona con modelos que lo soportan.
+    // Para los modelos preview de Gemini 2.5, usamos texto plano y extraemos el JSON manualmente.
+    // responseMimeType "application/json" funciona bien con modelos 2.5 GA y Gemini 3 GA
+    // Solo lo omitimos si el modelo es explícitamente preview (tiene 'preview' en el string)
+    const isPreview = model.includes('preview') || model.includes('exp');
+    const genConfig = isPreview
+      ? { maxOutputTokens: 1500, temperature: 0.1 }
+      : { maxOutputTokens: 1500, temperature: 0.1, responseMimeType: "application/json" };
+
+    let resp;
+    try {
+      resp = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+        {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({
+            systemInstruction: {parts:[{text: systemPrompt}]},
+            contents: [{role:"user", parts:[{text: userContent}]}],
+            generationConfig: genConfig
+          })
+        }
+      );
+    } catch(netErr) {
+      throw new Error(`Error de red al conectar con Google AI Studio: ${netErr.message}`);
+    }
+
+    // Verificar status HTTP antes de parsear
+    if (!resp.ok) {
+      let errBody = '';
+      try { const errData = await resp.json(); errBody = errData.error?.message || JSON.stringify(errData); } catch(_) { errBody = await resp.text(); }
+      throw new Error(`Google AI Studio HTTP ${resp.status}: ${errBody}`);
+    }
+
+    const data = await resp.json();
+
+    // Verificar error en el cuerpo de la respuesta
+    if (data.error) throw new Error(`Google AI Studio: ${data.error.message || JSON.stringify(data.error)}`);
+
+    // Verificar que la respuesta tiene el formato esperado
+    if (!data.candidates || !data.candidates[0]) {
+      const reason = data.promptFeedback?.blockReason || 'Sin candidatos en la respuesta';
+      throw new Error(`Google AI Studio bloqueó la respuesta: ${reason}`);
+    }
+    if (!data.candidates[0].content?.parts?.[0]?.text) {
+      const finishReason = data.candidates[0].finishReason || 'desconocida';
+      throw new Error(`Google AI Studio retornó respuesta vacía (finishReason: ${finishReason})`);
+    }
+
+    return data.candidates[0].content.parts[0].text;
+  }
+
+  if (p === 'openrouter') {
+    const key = apiConfig.openrouterKey;
+    if (!key) throw new Error('Falta la API key de OpenRouter. Configúrala en ⚙ Configuración de API.');
+    const model = apiConfig.openrouterModel || 'deepseek/deepseek-v4-flash:free';
+
+    // Algunos modelos OpenRouter no soportan response_format JSON — lo usamos solo con modelos que lo soportan bien
+    const supportsJsonFormat = [
+      'deepseek/', 'openai/', 'qwen/', 'google/gemma', 'nvidia/nemotron'
+    ].some(prefix => model.startsWith(prefix));
+
+    const bodyObj = {
+      model: model,
+      max_tokens: 1500,
+      temperature: 0.1,
+      messages: [
+        {role:"system", content: systemPrompt},
+        {role:"user", content: userContent}
+      ]
+    };
+    if (supportsJsonFormat) {
+      bodyObj.response_format = { type: "json_object" };
+    }
+
+    let resp;
+    try {
+      resp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type":"application/json",
+          "Authorization": `Bearer ${key}`,
+          "HTTP-Referer": "https://uoh.cl",
+          "X-Title": "Entrenador Objetivos Terapéuticos UOH"
+        },
+        body: JSON.stringify(bodyObj)
+      });
+    } catch(netErr) {
+      throw new Error(`Error de red al conectar con OpenRouter: ${netErr.message}`);
+    }
+
+    // Verificar status HTTP
+    if (!resp.ok) {
+      let errBody = '';
+      try { const errData = await resp.json(); errBody = errData.error?.message || JSON.stringify(errData); } catch(_) { errBody = await resp.text(); }
+      throw new Error(`OpenRouter HTTP ${resp.status}: ${errBody}`);
+    }
+
+    const data = await resp.json();
+
+    if (data.error) throw new Error(`OpenRouter: ${data.error.message || JSON.stringify(data.error)}`);
+    if (!data.choices || !data.choices[0]) throw new Error('OpenRouter no retornó ninguna opción de respuesta. El modelo puede estar temporalmente no disponible.');
+    if (!data.choices[0].message?.content) throw new Error(`OpenRouter retornó contenido vacío (finish_reason: ${data.choices[0].finish_reason || 'desconocido'})`);
+
+    return data.choices[0].message.content;
+  }
+
+  throw new Error('Proveedor no reconocido.');
+}
+
+// ═══════════════════════ ROBUST JSON EXTRACTOR ═══════════════════════
+function extractJSON(str) {
+  // 1. Eliminar bloques de código markdown: ```json ... ``` o ``` ... ```
+  str = str.replace(/```(?:json)?\s*([\s\S]*?)```/g, '$1').trim();
+
+  // 2. Buscar el primer '{' y encontrar su cierre balanceado (maneja JSON anidado correctamente)
+  const start = str.indexOf('{');
+  if (start === -1) throw new Error('La IA no retornó un objeto JSON válido. Intenta de nuevo.');
+
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  let end = -1;
+
+  for (let i = start; i < str.length; i++) {
+    const ch = str[i];
+    if (escape) { escape = false; continue; }
+    if (ch === '\\' && inString) { escape = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (ch === '{') depth++;
+    else if (ch === '}') {
+      depth--;
+      if (depth === 0) { end = i; break; }
+    }
+  }
+
+  if (end === -1) throw new Error('El JSON retornado por la IA está incompleto o malformado. Intenta de nuevo.');
+  return str.substring(start, end + 1);
+}
+
+// ═══════════════════════ EVALUATE ═══════════════════════
+async function evaluateObjective() {
+  const text = document.getElementById('objectiveInput').value.trim();
+  if (!text) { alert('Escribe un objetivo antes de evaluar.'); return; }
+  if (!currentType) { alert('Selecciona el tipo de objetivo.'); return; }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+
+  const gModelLabel = (apiConfig.googleModel || 'gemini-2.5-flash')
+    .replace('gemini-','Gemini ')
+    .replace(/-preview.*/,'')
+    .replace(/-\d{2}-\d{2}$/,'');
+  const orModelLabel = (apiConfig.openrouterModel || '').split('/').pop().replace(':free','') || 'DeepSeek V4 Flash';
+  const provNames = {google: gModelLabel, openrouter: orModelLabel};
+  document.getElementById('feedbackContainer').innerHTML = `
+    <div class="loading-box">
+      <div class="spinner"></div>
+      <div class="loading-text">Evaluando con <strong>${provNames[apiConfig.provider]||apiConfig.provider}</strong>… esto toma unos segundos.</div>
+    </div>`;
+
+  const systemPrompt = buildSystemPrompt();
+  const userContent = `Objetivo ${currentType==='general'?'General':'Específico'} redactado por el estudiante:\n\n"${text}"`;
+
+  let raw = '';
+  try {
+    raw = await callAPI(systemPrompt, userContent);
+    const cleaned = extractJSON(raw.trim());
+    const result = JSON.parse(cleaned);
+    
+    renderFeedback(result, text);
+    saveToHistory(CASES[currentCase], text, currentType, result);
+  } catch(err) {
+    // Mostrar mensaje de error detallado con el raw response para facilitar debugging
+    const rawPreview = raw ? `<details style="margin-top:10px"><summary style="cursor:pointer;font-size:11px;color:var(--gray-500)">Ver respuesta cruda del modelo (para diagnóstico)</summary><pre style="font-size:11px;margin-top:6px;background:#fff;border:1px solid var(--gray-300);border-radius:4px;padding:10px;overflow:auto;max-height:200px;white-space:pre-wrap;word-break:break-all">${raw.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre></details>` : '';
+    document.getElementById('feedbackContainer').innerHTML = `
+      <div style="background:#FDF0EF;border:1px solid #F0B8B4;border-radius:8px;padding:20px;margin-top:20px;font-size:14px;color:var(--danger)">
+        <strong>⚠ Error al evaluar:</strong> ${err.message}
+        <br><br><span style="font-size:12px;color:var(--gray-700)">
+          Verifica tu API key y modelo en <button onclick="openSettings()" style="border:none;background:none;color:var(--info);text-decoration:underline;cursor:pointer;font-size:12px">⚙ Configuración de API</button>.
+          <br>Si el error persiste, prueba cambiar a otro modelo en el menú de configuración.
+        </span>
+        ${rawPreview}
+      </div>`;
+  }
+  btn.disabled = false;
+}
+
+// ═══════════════════════ RENDER FEEDBACK ═══════════════════════
+function renderFeedback(r, originalText) {
+  const score = r.puntaje;
+  const pass = r.aprobado;
+  const partial = !pass && score >= 50;
+  const headerClass = pass ? 'pass' : partial ? 'partial' : 'fail';
+  const headerMsg = pass ? 'Objetivo aprobado ✓' : partial ? 'Objetivo incompleto' : 'Objetivo requiere corrección';
+  const headerSub = `Puntaje: ${score}/100 — ${pass ? 'Redacción correcta según fórmula ABCDE' : 'Revisa los componentes faltantes o incorrectos'}`;
+
+  const compDefs = currentType==='general'
+    ? [{key:'A_actor',letter:'A',name:'Actor'},{key:'B_accion',letter:'B',name:'Acción'},{key:'C_condicion',letter:'C',name:'Condición'},{key:'D_especificacion',letter:'D',name:'Grado'},{key:'E_plazo',letter:'E',name:'Plazo'}]
+    : [{key:'C_condicion',letter:'C',name:'Condición'},{key:'B_accion',letter:'B',name:'Acción'},{key:'D_especificacion',letter:'D',name:'Grado'},{key:'E_plazo',letter:'E',name:'Plazo'}];
+
+  const componentsHtml = compDefs.map(def => {
+    const comp = r.componentes ? r.componentes[def.key] : null;
+    if (!comp || comp.presente === null) return `<div class="comp-card na"><div class="comp-header"><div class="comp-letter">–</div><div class="comp-name">${def.name} (${def.letter})</div></div><div class="comp-comment">No aplica para este tipo.</div></div>`;
+    const cls = comp.presente ? (comp.correcto ? 'present correct' : 'present wrong') : 'absent';
+    const icon = comp.presente ? (comp.correcto ? '✓' : '⚠') : '✗';
+    return `<div class="comp-card ${cls}"><div class="comp-header"><div class="comp-letter">${icon}</div><div class="comp-name">${def.name} (${def.letter})</div></div>${comp.texto?`<div class="comp-found">"${comp.texto}"</div>`:''}<div class="comp-comment">${comp.comentario||''}</div></div>`;
+  }).join('');
+
+  const errorHtml = r.es_proceso
+    ? `<div class="warning-box"><span style="font-size:18px">⚠️</span><div><strong>Error de proceso detectado:</strong> ${r.error_tipico||'El objetivo inicia con un infinitivo que describe la acción del kinesiólogo, no el estado futuro del paciente. Cambia el infinitivo por un verbo conjugado en futuro.'}</div></div>`
+    : r.error_tipico ? `<div class="warning-box"><span style="font-size:18px">ℹ️</span><div><strong>Punto a mejorar:</strong> ${r.error_tipico}</div></div>` : '';
+
+  const c = CASES[currentCase];
+  const hintKey = currentType==='general' ? 'general' : 'specific';
+  const hintHtml = c.hints[hintKey] ? `
+    <details style="margin-top:12px">
+      <summary style="font-size:12px;color:var(--info);cursor:pointer">🔍 Ver componentes sugeridos para este caso</summary>
+      <div style="margin-top:8px;background:var(--gray-100);border-radius:4px;padding:10px;font-size:12.5px;font-family:var(--mono);line-height:2;color:var(--gray-700)">${c.hints[hintKey]}</div>
+    </details>` : '';
+
+  document.getElementById('feedbackContainer').innerHTML = `
+    <div class="feedback-box">
+      <div class="feedback-header ${headerClass}">
+        <div class="score-circle"><span>${score}</span></div>
+        <div><div class="feedback-title">${headerMsg}</div><div class="feedback-subtitle">${headerSub}</div></div>
+      </div>
+      <div class="feedback-body">
+        ${errorHtml}
+        <div class="fb-section"><div class="fb-section-title">Análisis por componente</div><div class="component-grid">${componentsHtml}</div></div>
+        <div class="fb-section"><div class="fb-section-title">Retroalimentación</div><div class="feedback-general">${r.feedback_general || 'Análisis finalizado.'}</div>${hintHtml}</div>
+        <div class="fb-section"><div class="fb-section-title">Versión corregida</div><div class="corrected-box"><div class="corrected-label">✅ Objetivo bien redactado</div><div class="corrected-text">${r.objetivo_corregido || ''}</div></div></div>
+        <button class="next-btn" onclick="tryAgain()">↻ Intentar de nuevo</button>
+        ${currentCase < CASES.length-1 ? `<button class="next-btn" style="margin-left:8px;background:var(--clay)" onclick="navigateCase(1);switchTab('practice',document.querySelectorAll('.tab-btn')[1])">Siguiente caso →</button>` : ''}
+      </div>
+    </div>`;
+}
+
+function tryAgain() {
+  document.getElementById('objectiveInput').value = '';
+  document.getElementById('charCount').textContent = '0';
+  document.getElementById('feedbackContainer').innerHTML = '';
+}
+
+// ═══════════════════════ HISTORY ═══════════════════════
+function saveToHistory(c, text, type, result) {
+  history.unshift({caseTitle:c.title,text,type,score:result.puntaje,aprobado:result.aprobado,feedback:result.feedback_general,provider:apiConfig.provider,date:new Date().toLocaleString('es-CL')});
+  if (history.length > 50) history = history.slice(0,50);
+  localStorage.setItem('kinObjectives_history', JSON.stringify(history));
+}
+
+function renderHistory() {
+  const container = document.getElementById('historyContent');
+  if (!history.length) {
+    container.innerHTML = `<div class="empty-history"><p>Sin intentos registrados</p><span>Ve a la pestaña Práctica y redacta tu primer objetivo.</span></div>`;
+    return;
+  }
+  const avg = Math.round(history.reduce((s,h)=>s+h.score,0)/history.length);
+  const approved = history.filter(h=>h.aprobado).length;
+  const best = Math.max(...history.map(h=>h.score));
+  const provIcons = {google:'✦',openrouter:'🔀'};
+  const cardsHtml = history.map(h => {
+    const cls = h.aprobado?'pass':h.score>=50?'partial':'fail';
+    return `<div class="history-card">
+      <div class="hc-header"><div><div class="hc-case">${h.caseTitle}</div><div class="hc-type">${h.type==='general'?'📋 General':'🔬 Específico'} · ${provIcons[h.provider]||''} ${h.provider||'—'} · ${h.date}</div></div><div class="hc-score ${cls}">${h.score}</div></div>
+      <div class="hc-text">"${h.text.length>120?h.text.slice(0,120)+'…':h.text}"</div>
+      <div style="font-size:12px;color:var(--gray-700);line-height:1.4">${h.feedback}</div>
+    </div>`;
+  }).join('');
+  container.innerHTML = `
+    <div class="stats-bar">
+      <div class="stat"><span class="stat-val">${history.length}</span><span class="stat-lbl">Intentos</span></div>
+      <div class="stat"><span class="stat-val">${approved}</span><span class="stat-lbl">Aprobados</span></div>
+      <div class="stat"><span class="stat-val">${avg}</span><span class="stat-lbl">Promedio</span></div>
+      <div class="stat"><span class="stat-val">${best}</span><span class="stat-lbl">Mejor puntaje</span></div>
+      <button class="clear-history-btn" onclick="clearHistory()">Borrar historial</button>
+    </div>
+    <div class="history-grid">${cardsHtml}</div>`;
+}
+
+function clearHistory() {
+  if (!confirm('¿Borrar todo el historial?')) return;
+  history = [];
+  localStorage.removeItem('kinObjectives_history');
+  renderHistory();
+}
+
+// ═══════════════════════ INIT ═══════════════════════
+updateProviderBadge();
+renderCase();
+</script>
+</body>
+</html>
