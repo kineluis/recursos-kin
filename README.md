@@ -1,9 +1,7 @@
-# Recursos Educativos — Kinesiología UOH
+# Recursos Educativos — Kinesiología 
 
 Herramientas interactivas de acceso abierto para la enseñanza y el aprendizaje
-en ciencias de la salud, desarrolladas en la Carrera de Kinesiología de la
-Escuela de Salud, Universidad de O'Higgins.
-
+en ciencias de la salud, desarrolladas por el docente klgo.Luis Flores Abarca 
 ## 🌐 Sitio web
 
 👉 [kineluis.github.io/recursos-kin](https://kineluis.github.io/recursos-kin/)
@@ -26,8 +24,7 @@ Escuela de Salud, Universidad de O'Higgins.
 ## 👤 Autor
 
 **Klgo. Luis Flores Abarca**  
-Jefe de Carrera de Kinesiología  
-Escuela de Salud · Universidad de O'Higgins · Rancagua, Chile
+
 
 ## 📄 Licencia
 
