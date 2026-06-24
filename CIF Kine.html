@@ -1,0 +1,2070 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UOH - Constructor de Mapa CIF</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght=300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans', sans-serif;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <header class="bg-gradient-to-r from-teal-800 to-cyan-900 text-white shadow-md border-b-4 border-amber-500">
+        <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div>
+                    <h1 class="text-xl font-extrabold tracking-tight">Proyecto Klgo. Luis Flores A.</h1>
+                </div>
+            </div>
+            
+            <div class="text-center sm:text-right">
+                <span class="bg-teal-950 text-amber-400 font-bold px-3 py-1 rounded-full text-xs border border-amber-500/30 shadow-sm">
+                    Constructor de Mapa CIF v1.2
+                </span>
+                <p class="text-xs text-slate-300 mt-1">Razonamiento Clínico Mediado por IA</p>
+            </div>
+        </div>
+    </header>
+
+    <div class="bg-white border-b border-slate-200 py-3 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div class="flex space-x-1" id="viewTabs">
+                <button onclick="switchView('student')" id="btn-tab-student" class="px-4 py-2 font-semibold text-sm rounded-lg bg-teal-50 text-teal-700 border-b-2 border-teal-600 transition-all flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l9-5-9-5-9 5 9 5zm0 0v6m0 0l3-3m-3 3l-3-3"/></svg>
+                    Vista Estudiante
+                </button>
+                <button onclick="switchView('teacher')" id="btn-tab-teacher" class="px-4 py-2 font-semibold text-sm rounded-lg text-slate-600 hover:text-teal-700 hover:bg-slate-50 transition-all flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    Panel Docente (Administración)
+                    <span id="lockBadge" class="inline-block text-[9px] bg-amber-100 text-amber-800 border border-amber-200 px-1.5 py-0.5 rounded font-extrabold ml-1">Bloqueado</span>
+                </button>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-3 bg-slate-50 border border-slate-200 p-2 rounded-xl">
+                <div class="flex flex-col">
+                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Proveedor API</span>
+                    <select id="apiProvider" onchange="handleProviderChange()" class="text-xs px-2 py-1 border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 bg-white font-semibold text-slate-700">
+                        <option value="simulated">Simulador Local (Sin clave)</option>
+                        <option value="gemini">Google Gemini Nativo</option>
+                        <option value="openrouter">OpenRouter (Modelos Free)</option>
+                    </select>
+                </div>
+
+                <div id="modelSelectorContainer" class="flex flex-col hidden">
+                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Modelo Educativo</span>
+                    <select id="openrouterModel" class="text-xs px-2 py-1 border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 bg-white text-slate-700 font-medium">
+                        <option value="google/gemini-2.5-flash:free">Gemini 2.5 Flash Free (Recomendado)</option>
+                        <option value="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B Free (Razonamiento)</option>
+                        <option value="deepseek/deepseek-v4-flash:free">DeepSeek V4 Flash Free (Rápido/Razonamiento)</option>
+                        <option value="nvidia/nemotron-3-nano-30b-a3b:free">NVIDIA Nemotron 3 Nano Free (Eficiente)</option>
+                        <option value="nvidia/nemotron-3-super-120b-a12b:free">NVIDIA Nemotron 3 Super Free (Alta precisión)</option>
+                    </select>
+                </div>
+
+                <div id="apiKeyInputContainer" class="flex flex-col hidden">
+                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Clave de API</span>
+                    <div class="relative flex items-center">
+                        <input type="password" id="geminiApiKey" placeholder="Pegar clave de API aquí" 
+                               oninput="checkApiStatus()"
+                               class="text-xs px-2.5 py-1 border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 w-44 pr-8 bg-white text-slate-700 placeholder-slate-400 font-mono" />
+                        <button onclick="toggleKeyVisibility()" class="absolute right-2 text-slate-400 hover:text-slate-600">
+                            <svg id="eyeIcon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex items-center self-end pb-1.5 px-1">
+                    <div id="apiStatusBadge" class="w-3 h-3 rounded-full bg-amber-400 animate-pulse" title="Modo Simulado Activo"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <main class="flex-grow max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 w-full flex flex-col gap-6">
+
+        <div id="student-view" class="space-y-6">
+            
+            <div id="workspace-container" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <div class="lg:col-span-4 flex flex-col gap-4">
+                    
+                    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 flex flex-col flex-grow">
+                        <div class="flex items-center justify-between mb-3">
+                            <label class="text-xs uppercase tracking-wider font-extrabold text-teal-800">Caso Clínico Asignado</label>
+                            <span id="caseDifficulty" class="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold rounded-md">Intermedio</span>
+                        </div>
+                        
+                        <select id="caseSelector" onchange="loadCase(this.value)" class="w-full text-sm font-bold text-slate-800 border border-slate-300 rounded-xl p-2.5 mb-4 focus:ring-2 focus:ring-teal-500 focus:outline-none bg-slate-50">
+                            </select>
+                        
+                        <div class="border-t border-slate-100 my-2"></div>
+                        
+                        <div class="flex-grow overflow-y-auto custom-scrollbar max-h-[350px] lg:max-h-[500px] mt-2 pr-1">
+                            <h3 id="caseTitleDisplay" class="font-bold text-slate-900 mb-2 text-base">Cargando caso...</h3>
+                            <div id="caseTextDisplay" class="text-sm text-slate-600 leading-relaxed whitespace-pre-line space-y-2">
+                                </div>
+                        </div>
+
+                        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mt-4">
+                            <div class="flex gap-2">
+                                <svg class="w-5 h-5 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                <p class="text-xs text-amber-800 leading-normal">
+                                    <strong>Instrucción pedagógica:</strong> Identifica hallazgos clave en el texto y clasifícalos en las 4 zonas. El sistema evaluará si tus clasificaciones se relacionan lógicamente entre sí.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-8 flex flex-col gap-6">
+                    
+                    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="flex items-center gap-4">
+                            <div class="relative w-16 h-16 shrink-0 flex items-center justify-center">
+                                <svg class="w-full h-full transform -rotate-90">
+                                    <circle cx="32" cy="32" r="28" stroke-width="6" stroke="#f1f5f9" fill="transparent"/>
+                                    <circle id="coherenceProgressCircle" cx="32" cy="32" r="28" stroke-width="6" stroke="#0d9488" fill="transparent" stroke-dasharray="175.9" stroke-dashoffset="175.9" class="transition-all duration-1000"/>
+                                </svg>
+                                <span id="coherenceValueText" class="absolute font-extrabold text-sm text-teal-800">0%</span>
+                            </div>
+                            <div>
+                                <h3 class="font-extrabold text-slate-800 text-sm">Coherencia Global de tu Mapa</h3>
+                                <p class="text-xs text-slate-500 mt-0.5">Mide la correlación lógica entre los elementos de cada zona según la rúbrica.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-end gap-3 self-end sm:self-auto">
+                            <span class="text-xs text-slate-500">Sesión Actual:</span>
+                            <span id="roundIndicatorBadge" class="bg-teal-800 text-white font-bold px-3 py-1.5 rounded-xl text-xs tracking-wider uppercase">
+                                Ronda 0 de 3
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        
+                        <div id="card-structures" class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col transition-all duration-300">
+                            <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-3 h-3 rounded-full bg-slate-300" id="semaphore-structures"></div>
+                                    <h4 class="font-bold text-sm text-slate-800">1. Estructuras Corporales</h4>
+                                </div>
+                                <span class="text-[10px] bg-slate-200 text-slate-600 font-bold uppercase px-1.5 py-0.5 rounded">CIF E</span>
+                            </div>
+                            <div class="p-4 flex-grow flex flex-col gap-3">
+                                <p class="text-[11px] text-slate-500 italic">Tejidos, órganos o sistemas con alteración morfológica identificable.</p>
+                                
+                                <div class="flex gap-1">
+                                    <input type="text" id="input-structures" placeholder="Ej. Cartílago de rodilla desgastado" 
+                                           onkeypress="handleTagInputKeyPress(event, 'structures')"
+                                           class="flex-grow text-xs px-2.5 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none" />
+                                    <button onclick="addTag('structures')" class="bg-teal-700 hover:bg-teal-800 text-white p-1.5 rounded-lg text-xs font-semibold transition-colors shrink-0">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                                    </button>
+                                </div>
+                                
+                                <div id="tags-structures" class="flex flex-wrap gap-1.5 mt-2 min-h-[60px] max-h-[140px] overflow-y-auto p-1 border border-dashed border-slate-200 rounded-lg custom-scrollbar">
+                                    <span class="text-xs text-slate-400 italic m-auto select-none pointer-events-none py-4">Sin hallazgos agregados</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="card-functions" class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col transition-all duration-300">
+                            <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-3 h-3 rounded-full bg-slate-300" id="semaphore-functions"></div>
+                                    <h4 class="font-bold text-sm text-slate-800">2. Funciones Corporales</h4>
+                                </div>
+                                <span class="text-[10px] bg-slate-200 text-slate-600 font-bold uppercase px-1.5 py-0.5 rounded">CIF F</span>
+                            </div>
+                            <div class="p-4 flex-grow flex flex-col gap-3">
+                                <p class="text-[11px] text-slate-500 italic">Funciones fisiológicas o psicológicas alteradas o ausentes.</p>
+                                
+                                <div class="flex gap-1">
+                                    <input type="text" id="input-functions" placeholder="Ej. Dolor al movimiento" 
+                                           onkeypress="handleTagInputKeyPress(event, 'functions')"
+                                           class="flex-grow text-xs px-2.5 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none" />
+                                    <button onclick="addTag('functions')" class="bg-teal-700 hover:bg-teal-800 text-white p-1.5 rounded-lg text-xs font-semibold transition-colors shrink-0">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                                    </button>
+                                </div>
+                                
+                                <div id="tags-functions" class="flex flex-wrap gap-1.5 mt-2 min-h-[60px] max-h-[140px] overflow-y-auto p-1 border border-dashed border-slate-200 rounded-lg custom-scrollbar">
+                                    <span class="text-xs text-slate-400 italic m-auto select-none pointer-events-none py-4">Sin hallazgos agregados</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="card-activities" class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col transition-all duration-300">
+                            <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-3 h-3 rounded-full bg-slate-300" id="semaphore-activities"></div>
+                                    <h4 class="font-bold text-sm text-slate-800">3. Limitaciones en la Actividad</h4>
+                                </div>
+                                <span class="text-[10px] bg-slate-200 text-slate-600 font-bold uppercase px-1.5 py-0.5 rounded">CIF A</span>
+                            </div>
+                            <div class="p-4 flex-grow flex flex-col gap-3">
+                                <p class="text-[11px] text-slate-500 italic">Dificultades individuales para ejecutar tareas o acciones cotidianas.</p>
+                                
+                                <div class="flex gap-1">
+                                    <input type="text" id="input-activities" placeholder="Ej. Subir y bajar escaleras" 
+                                           onkeypress="handleTagInputKeyPress(event, 'activities')"
+                                           class="flex-grow text-xs px-2.5 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none" />
+                                    <button onclick="addTag('activities')" class="bg-teal-700 hover:bg-teal-800 text-white p-1.5 rounded-lg text-xs font-semibold transition-colors shrink-0">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                                    </button>
+                                </div>
+                                
+                                <div id="tags-activities" class="flex flex-wrap gap-1.5 mt-2 min-h-[60px] max-h-[140px] overflow-y-auto p-1 border border-dashed border-slate-200 rounded-lg custom-scrollbar">
+                                    <span class="text-xs text-slate-400 italic m-auto select-none pointer-events-none py-4">Sin hallazgos agregados</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="card-participation" class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col transition-all duration-300">
+                            <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-3 h-3 rounded-full bg-slate-300" id="semaphore-participation"></div>
+                                    <h4 class="font-bold text-sm text-slate-800">4. Restricciones en la Participación</h4>
+                                </div>
+                                <span class="text-[10px] bg-slate-200 text-slate-600 font-bold uppercase px-1.5 py-0.5 rounded">CIF P</span>
+                            </div>
+                            <div class="p-4 flex-grow flex flex-col gap-3">
+                                <p class="text-[11px] text-slate-500 italic">Problemas para involucrarse en situaciones vitales, roles y vida social.</p>
+                                
+                                <div class="flex gap-1">
+                                    <input type="text" id="input-participation" placeholder="Ej. Abandono de club de baile" 
+                                           onkeypress="handleTagInputKeyPress(event, 'participation')"
+                                           class="flex-grow text-xs px-2.5 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none" />
+                                    <button onclick="addTag('participation')" class="bg-teal-700 hover:bg-teal-800 text-white p-1.5 rounded-lg text-xs font-semibold transition-colors shrink-0">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                                    </button>
+                                </div>
+                                
+                                <div id="tags-participation" class="flex flex-wrap gap-1.5 mt-2 min-h-[60px] max-h-[140px] overflow-y-auto p-1 border border-dashed border-slate-200 rounded-lg custom-scrollbar">
+                                    <span class="text-xs text-slate-400 italic m-auto select-none pointer-events-none py-4">Sin hallazgos agregados</span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div id="feedbackContainer" class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col">
+                        <div class="px-5 py-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                            <span class="font-bold text-sm text-slate-800 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                                Retroalimentación Diagnóstica de Coherencia (IA)
+                            </span>
+                            <span id="feedbackStatusBadge" class="text-[10px] bg-slate-200 text-slate-600 font-bold px-2 py-0.5 rounded">Ronda 0</span>
+                        </div>
+                        
+                        <div class="p-5 flex-grow">
+                            <div id="feedbackLoading" class="hidden py-12 flex flex-col items-center justify-center gap-4">
+                                <div class="w-12 h-12 rounded-full border-4 border-teal-500 border-t-transparent animate-spin"></div>
+                                <div class="text-center">
+                                    <p id="loadingTitle" class="text-sm font-bold text-slate-700 font-sans">Analizando coherencia inter-dominio...</p>
+                                    <p id="loadingSubtitle" class="text-xs text-slate-500 mt-1">El modelo está contrastando tus clasificaciones con las directrices clínicas.</p>
+                                </div>
+                            </div>
+
+                            <div id="feedbackInitialState" class="py-10 flex flex-col items-center justify-center text-center">
+                                <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-3">
+                                    <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                </div>
+                                <h5 class="font-bold text-slate-700 text-sm">Tu mapa está en etapa de borrador</h5>
+                                <p class="text-xs text-slate-500 max-w-md mx-auto mt-1">Agrega al menos un ítem por dominio que identifiques del caso clínico, luego presiona "Solicitar Retroalimentación" para activar los semáforos de coherencia.</p>
+                            </div>
+
+                            <div id="feedbackResultList" class="hidden space-y-4">
+                                </div>
+                        </div>
+
+                        <div class="bg-slate-50 px-5 py-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+                            <button onclick="openHistoryModal()" class="w-full sm:w-auto text-xs font-semibold text-teal-800 hover:bg-teal-100 border border-teal-200 bg-teal-50 px-4 py-2.5 rounded-xl transition-all flex items-center justify-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                Ver Historial de Cambios
+                            </button>
+                            
+                            <div class="flex items-center gap-2 w-full sm:w-auto">
+                                <button onclick="resetCurrentMap()" class="w-1/3 sm:w-auto text-xs font-semibold text-rose-700 hover:bg-rose-50 border border-slate-200 bg-white px-3 py-2.5 rounded-xl transition-all flex items-center justify-center gap-1" title="Reiniciar borrador actual">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    Limpiar
+                                </button>
+                                <button id="btnRequestFeedback" onclick="requestFeedback()" class="w-2/3 sm:w-auto flex-grow text-xs font-extrabold text-white bg-teal-700 hover:bg-teal-800 active:scale-95 px-6 py-2.5 rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
+                                    <span>Solicitar Retroalimentación →</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div id="reflection-container" class="hidden max-w-3xl mx-auto bg-white border border-slate-200 rounded-2xl shadow-lg overflow-hidden">
+                <div class="bg-gradient-to-r from-teal-800 to-cyan-900 p-6 text-white text-center">
+                    <div class="inline-flex p-3 bg-white/10 rounded-full mb-3">
+                        <svg class="w-8 h-8 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                    </div>
+                    <h3 class="font-extrabold text-xl">¡Has completado tus rondas de análisis!</h3>
+                    <p class="text-sm text-teal-100 mt-1">Has alcanzado el límite de intentos de retroalimentación estructurada.</p>
+                </div>
+
+                <div class="p-6 space-y-6">
+                    <div class="grid grid-cols-2 gap-4 text-center">
+                        <div class="p-4 bg-teal-50 border border-teal-200 rounded-xl">
+                            <span class="block text-2xl font-extrabold text-teal-800" id="finalCoherenceDisplay">84%</span>
+                            <span class="text-xs font-semibold text-teal-600">Coherencia de Mapa Final</span>
+                        </div>
+                        <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                            <span class="block text-2xl font-extrabold text-slate-800" id="finalRoundsDisplay">3 / 3</span>
+                            <span class="text-xs font-semibold text-slate-500">Rondas Consumidas</span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="block text-xs uppercase tracking-wider font-extrabold text-slate-700">Reflexión Metacognitiva Final</label>
+                        <p class="text-xs text-slate-500">Describe brevemente (3-5 líneas) cómo cambió tu razonamiento clínico desde tu mapa inicial de la Ronda 0 hasta la versión actual y qué conexiones pasaste por alto inicialmente:</p>
+                        <textarea id="reflectionText" rows="4" placeholder="Al principio no había considerado que..." 
+                                  class="w-full text-sm border border-slate-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-teal-500 bg-slate-50"></textarea>
+                    </div>
+
+                    <div class="border-t border-slate-100 pt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <button onclick="revealCaseRubric()" class="text-xs font-semibold text-teal-700 hover:underline">
+                            🔓 Revelar Rúbrica Oficial del Docente (Autoevaluación)
+                        </button>
+                        <button onclick="submitFinalReflection()" class="w-full sm:w-auto bg-teal-800 hover:bg-teal-900 text-white font-extrabold px-6 py-2.5 rounded-xl shadow-md transition-all">
+                            Enviar y Finalizar Sesión
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="report-container" class="hidden max-w-3xl mx-auto bg-white border border-slate-200 rounded-2xl shadow-lg p-6 space-y-6">
+                <div class="border-b border-slate-100 pb-4 text-center">
+                    <span class="bg-emerald-100 text-emerald-800 font-extrabold px-3 py-1 rounded-full text-[10px] tracking-widest uppercase">
+                        Sesión Registrada Exitosamente
+                    </span>
+                    <h3 class="font-extrabold text-xl text-slate-800 mt-2">Informe Final de Razonamiento Clínico CIF</h3>
+                    <p class="text-xs text-slate-500">Tus datos de proceso y evolución han sido guardados para revisión docente.</p>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-sm text-slate-800 mb-2">Evolución de Coherencia de tu Mapa</h4>
+                    <div class="h-10 w-full bg-slate-100 rounded-full flex overflow-hidden p-1 shadow-inner" id="evolutionBar">
+                        </div>
+                </div>
+
+                <div class="bg-teal-50/50 border border-teal-100 rounded-xl p-4">
+                    <h4 class="font-bold text-xs uppercase tracking-wider text-teal-800 mb-1">Tu Reflexión Registrada</h4>
+                    <p id="recordedReflection" class="text-xs text-slate-600 leading-relaxed italic">"Sin reflexión cargada."</p>
+                </div>
+
+                <div id="rubricRevealBox" class="hidden border border-slate-200 rounded-2xl p-5 bg-slate-50 space-y-4">
+                    <h3 class="font-extrabold text-sm text-slate-800 border-b border-slate-200 pb-2 flex items-center gap-2">
+                        <span>📋 Rúbrica de Referencia del Caso</span>
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                        <div>
+                            <span class="font-bold text-slate-800">Estructuras Esperadas:</span>
+                            <ul class="list-disc pl-4 mt-1 text-slate-600 space-y-1" id="rubric-struct-list"></ul>
+                        </div>
+                        <div>
+                            <span class="font-bold text-slate-800">Funciones Esperadas:</span>
+                            <ul class="list-disc pl-4 mt-1 text-slate-600 space-y-1" id="rubric-func-list"></ul>
+                        </div>
+                        <div>
+                            <span class="font-bold text-slate-800">Actividades Esperadas:</span>
+                            <ul class="list-disc pl-4 mt-1 text-slate-600 space-y-1" id="rubric-act-list"></ul>
+                        </div>
+                        <div>
+                            <span class="font-bold text-slate-800">Participación Esperada:</span>
+                            <ul class="list-disc pl-4 mt-1 text-slate-600 space-y-1" id="rubric-part-list"></ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center pt-2">
+                    <button onclick="restartSession()" class="text-xs font-bold text-teal-800 hover:bg-slate-100 border border-slate-300 px-4 py-2 rounded-xl transition-all">
+                        🔄 Iniciar Nueva Sesión (Reiniciar)
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <div id="teacher-view" class="space-y-6 hidden">
+            
+            <div class="grid grid-cols-1 gap-6">
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <h3 class="font-extrabold text-base text-slate-800 font-sans">1. Editor de Casos y Rúbricas Ocultas</h3>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <button onclick="createNewCaseTemplate()" class="bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs px-3 py-1.5 rounded-xl transition-all">
+                                    + Crear Nuevo Caso
+                                </button>
+                                <button onclick="openGenerateCaseModal()" class="bg-violet-600 hover:bg-violet-700 text-white font-bold text-xs px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5" title="Generar caso clínico completo con IA">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                    Generar con IA
+                                </button>
+                                <button onclick="lockTeacherPanel()" class="bg-slate-700 hover:bg-slate-800 text-white font-bold text-xs px-3 py-1.5 rounded-xl transition-all flex items-center gap-1" title="Cerrar sesión del panel docente">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                    Bloquear
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div class="sm:col-span-2">
+                                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Seleccionar Caso a Modificar</label>
+                                <select id="teacherCaseSelector" onchange="loadCaseInTeacherEditor(this.value)" class="w-full text-xs font-semibold text-slate-800 border border-slate-300 rounded-xl p-2.5 bg-slate-50">
+                                    </select>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Dificultad</label>
+                                <select id="editCaseDifficulty" class="w-full text-xs font-semibold text-slate-800 border border-slate-300 rounded-xl p-2.5 bg-slate-50">
+                                    <option value="Principiante">Principiante</option>
+                                    <option value="Intermedio" selected>Intermedio</option>
+                                    <option value="Avanzado">Avanzado</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="block text-[11px] font-bold text-slate-500 uppercase">Título del Caso Clínico</label>
+                            <input type="text" id="editCaseTitle" class="w-full text-xs border border-slate-300 rounded-xl p-2.5 font-bold" />
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="block text-[11px] font-bold text-slate-500 uppercase">Texto Descriptivo del Caso Clínico</label>
+                            <textarea id="editCaseText" rows="6" class="w-full text-xs border border-slate-300 rounded-xl p-2.5 leading-relaxed font-mono"></textarea>
+                        </div>
+
+                        <div class="border-t border-slate-100 pt-4">
+                            <h4 class="font-bold text-xs text-teal-800 uppercase tracking-wider mb-2">Rúbrica de Hallazgos Esperados (Para Semáforos)</h4>
+                            <p class="text-[10px] text-slate-500 mb-3">Introduce palabras o conceptos clave que el evaluador inteligente utilizará para buscar correlatos e inconsistencias.</p>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-slate-600 block">Estructuras Esperadas (una por línea):</label>
+                                    <textarea id="editCaseStruct" rows="3" class="w-full text-xs border border-slate-300 rounded-xl p-2 font-mono"></textarea>
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-slate-600 block">Funciones Esperadas (una por línea):</label>
+                                    <textarea id="editCaseFunc" rows="3" class="w-full text-xs border border-slate-300 rounded-xl p-2 font-mono"></textarea>
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-slate-600 block">Actividades Esperadas (una por línea):</label>
+                                    <textarea id="editCaseAct" rows="3" class="w-full text-xs border border-slate-300 rounded-xl p-2 font-mono"></textarea>
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-slate-600 block">Participación Esperada (una por línea):</label>
+                                    <textarea id="editCasePart" rows="3" class="w-full text-xs border border-slate-300 rounded-xl p-2 font-mono"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-teal-50 border border-teal-200 rounded-xl p-3">
+                            <label class="block text-[11px] font-bold text-teal-800 uppercase mb-1">Vínculos de Coherencia Clave (Ejemplos de referencia para el LLM)</label>
+                            <textarea id="editCaseLinks" rows="3" placeholder="Origen -> Destino : Justificación" class="w-full text-xs border border-teal-300 rounded-xl p-2 bg-white font-mono"></textarea>
+                        </div>
+
+                        <div class="flex justify-end gap-2 pt-2">
+                            <button onclick="restoreDefaultCases()" class="text-xs font-bold text-rose-700 hover:bg-rose-50 border border-rose-200 px-4 py-2 rounded-xl transition-all">
+                                Restaurar Valores por Defecto
+                            </button>
+                            <button onclick="saveCaseFromEditor()" class="bg-teal-800 hover:bg-teal-900 text-white font-extrabold text-xs px-6 py-2 rounded-xl shadow-md transition-all">
+                                Guardar Caso Clínico
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <div id="gatekeeperModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border border-slate-200 transition-all transform scale-100">
+            <div class="bg-gradient-to-r from-teal-800 to-cyan-900 p-6 text-white text-center">
+                <div class="inline-flex p-3 bg-white/10 rounded-full mb-3">
+                    <svg class="w-8 h-8 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                    </svg>
+                </div>
+                <h3 class="font-extrabold text-lg">Acceso Exclusivo para Docentes</h3>
+                <p class="text-xs text-teal-200 mt-1">Este espacio contiene las rúbricas de respuesta y el registro analítico de la cohorte.</p>
+            </div>
+            
+            <div class="p-6 space-y-4">
+                <div class="space-y-1">
+                    <label class="block text-xs uppercase tracking-wider font-extrabold text-slate-600">Clave de Acceso</label>
+                    <input type="password" id="gatekeeperPassword" placeholder="Ingresa la contraseña docente" 
+                           onkeypress="handleGatekeeperKeyPress(event)"
+                           class="w-full text-sm border border-slate-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-teal-500 bg-slate-50 text-center font-mono tracking-widest text-slate-800" />
+                </div>
+
+                <div id="gatekeeperError" class="hidden text-xs text-rose-600 bg-rose-50 border border-rose-200 p-3 rounded-lg text-center font-bold">
+                    ⚠️ Contraseña incorrecta. Inténtalo de nuevo.
+                </div>
+
+                <div class="flex gap-2">
+                    <button onclick="cancelGatekeeper()" class="w-1/2 text-xs font-bold text-slate-500 hover:bg-slate-100 border border-slate-200 py-3 rounded-xl transition-all">
+                        Cancelar
+                    </button>
+                    <button onclick="verifyGatekeeper()" class="w-1/2 text-xs font-extrabold text-white bg-teal-800 hover:bg-teal-950 py-3 rounded-xl shadow-md transition-all">
+                        Verificar e Ingresar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="historyModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-4xl w-full shadow-2xl overflow-hidden border border-slate-200 transition-all transform scale-95 duration-300">
+            <div class="bg-slate-900 text-white p-5 flex items-center justify-between">
+                <div>
+                    <h3 class="font-bold text-base">Historial de Revisiones del Mapa</h3>
+                    <p class="text-xs text-slate-400">Analiza el registro cronológico de tus cambios para un proceso metacognitivo reflexivo.</p>
+                </div>
+                <button onclick="closeHistoryModal()" class="text-slate-400 hover:text-white transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            
+            <div class="p-6 max-h-[500px] overflow-y-auto custom-scrollbar space-y-6" id="historyTimelineContainer">
+                </div>
+
+            <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end">
+                <button onclick="closeHistoryModal()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-all">
+                    Entendido, Volver al Borrador
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <div id="generateCaseModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border border-slate-200">
+            <div class="bg-gradient-to-r from-violet-700 to-purple-800 p-5 text-white">
+                <div class="flex items-center gap-3">
+                    <div class="bg-white/15 p-2 rounded-xl">
+                        <svg class="w-6 h-6 text-violet-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="font-extrabold text-base">Generador de Caso Clínico con IA</h3>
+                        <p class="text-xs text-violet-200 mt-0.5">Rellena todos los campos del editor automáticamente.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-5 space-y-4">
+                <div id="generateModalApiWarning" class="hidden bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800 flex gap-2 items-start">
+                    <svg class="w-4 h-4 shrink-0 mt-0.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span>Selecciona un proveedor de API (Gemini u OpenRouter) e introduce tu clave en el panel superior antes de generar.</span>
+                </div>
+
+                <div class="space-y-1.5">
+                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">Tema o Patología <span class="text-slate-400 font-normal normal-case">(opcional)</span></label>
+                    <input type="text" id="generateCaseTopic" placeholder="Ej: lumbalgia crónica, parálisis cerebral, EPOC..." class="w-full text-sm border border-slate-300 rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-violet-500 bg-slate-50" />
+                    <p class="text-[10px] text-slate-400">Si lo dejas vacío, la IA elegirá una patología kinesiológica variada.</p>
+                </div>
+
+                <div class="space-y-1.5">
+                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">Nivel de Dificultad</label>
+                    <select id="generateCaseDifficulty" class="w-full text-sm border border-slate-300 rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-violet-500 bg-slate-50 font-semibold text-slate-700">
+                        <option value="Principiante">Principiante</option>
+                        <option value="Intermedio" selected>Intermedio</option>
+                        <option value="Avanzado">Avanzado</option>
+                    </select>
+                </div>
+
+                <div id="generateCaseLoading" class="hidden py-6 flex flex-col items-center justify-center gap-3">
+                    <div class="w-10 h-10 rounded-full border-4 border-violet-500 border-t-transparent animate-spin"></div>
+                    <p class="text-sm font-bold text-slate-700">Generando caso clínico...</p>
+                    <p class="text-xs text-slate-500">La IA está redactando el caso, rúbrica y vínculos CIF.</p>
+                </div>
+            </div>
+
+            <div class="bg-slate-50 px-5 py-4 border-t border-slate-100 flex gap-2 justify-end">
+                <button onclick="closeGenerateCaseModal()" id="generateCaseCancelBtn" class="text-xs font-bold text-slate-500 hover:bg-slate-100 border border-slate-200 px-4 py-2.5 rounded-xl transition-all">
+                    Cancelar
+                </button>
+                <button onclick="generateCaseWithAI()" id="generateCaseBtn" class="bg-violet-600 hover:bg-violet-700 active:scale-95 text-white font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-md transition-all flex items-center gap-2">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    Generar Caso Completo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-slate-900 text-slate-400 py-6 border-t border-slate-800 text-center mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-xs space-y-2">
+            <p>© 2026 · <a href="https://kineluis.github.io/recursos-kin" target="_blank" rel="noopener" class="text-teal-400 hover:text-amber-400 underline transition-colors">kineluis.github.io/recursos-kin</a> · <a href="https://github.com/kineluis/recursos-kin" target="_blank" rel="noopener" class="text-teal-400 hover:text-amber-400 underline transition-colors">github.com/kineluis/recursos-kin</a></p>
+            <p class="text-slate-600">Herramienta web con andamiaje de Inteligencia Artificial para practicar el razonamiento de la CIF.</p>
+            <p class="text-slate-500 pt-1 border-t border-slate-800">
+                Construido por <span class="text-slate-300 font-semibold">Klgo. Luis Flores A.</span>
+                &nbsp;·&nbsp;
+                <a href="mailto:kineluis@gmail.com" class="text-teal-400 hover:text-teal-300 transition-colors">kineluis@gmail.com</a>
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // --- 1. CONFIGURACIÓN DEL MODELO DE DATOS ---
+        const DEFAULT_CASES = [
+            {
+                id: "case-01",
+                title: "Caso 01: Gonalgia Bilateral - Artrosis Femoropatelar",
+                difficulty: "Intermedio",
+                text: `Paciente femenina de 58 años de edad, de profesión Secretaria en un edificio municipal de tres pisos que no posee ascensor. Consulta por un cuadro clínico de gonalgia bilateral (dolor en ambas rodillas) de curso insidioso de aproximadamente un año de evolución, exacerbado notablemente en los últimos 3 meses.\n\nEn la anamnesis, refiere dolor difuso en la región anterior de ambas rodillas de intensidad 7/10 en Escala Visual Análoga (EVA) al realizar esfuerzos mecánicos específicos, tales como subir y bajar escaleras, o permanecer de pie más de 30 minutos de forma continua. El dolor cede parcialmente al reposo y a la toma de antiinflamatorios no esteroideos de venta libre. Recientemente ha comenzado a experimentar dolor sordo e incomodidad incluso al preparar sus alimentos cotidianos en la cocina de su hogar.\n\nEn la evaluación física y kinésica se evidencia:\n- Reducción visible del espacio articular femoropatelar bilateral según radiografías aportadas.\n- Crepitaciones audibles y palpables en ambas articulaciones femororrotulianas durante la flexo-extensión activa.\n- Atrofia moderada y debilidad muscular del cuádriceps bilateral (fuerza calificada en 3+/5 según escala de Daniels).\n- Disminución de la resistencia muscular global de extremidades inferiores.\n- Rango articular conservado, pero doloroso al final de la flexión forzada.\n\nLa paciente manifiesta extrema preocupación puesto que debido al dolor no puede realizar adecuadamente su labor de archivadora en los pisos superiores del municipio, y ha tenido que abandonar sus reuniones semanales en el club de tejido de su barrio, lo que le genera un profundo sentimiento de aislamiento social.`,
+                estructuras: [
+                    "Cartílago articular de rodilla (femoropatelar)",
+                    "Espacio articular femororrotuliano"
+                ],
+                funciones: [
+                    "Dolor al esfuerzo mecánico / movimiento",
+                    "Fuerza muscular de cuádriceps disminuida",
+                    "Resistencia muscular disminuida",
+                    "Crepitación articular femororrotuliana"
+                ],
+                actividades: [
+                    "Subir y bajar escaleras",
+                    "Bipedestación prolongada",
+                    "Preparar alimentos cotidianos"
+                ],
+                participacion: [
+                    "Desempeño laboral de archivar en pisos superiores (Secretaria)",
+                    "Participación en club social de tejido",
+                    "Acceso a la vivienda y edificio municipal"
+                ],
+                vinculos: [
+                    "Debilidad de cuádriceps (Función) -> Dificultad para bipedestación prolongada (Actividad)",
+                    "Dolor al movimiento en rodillas (Función) -> Dificultad para subir/bajar escaleras (Actividad)",
+                    "Dificultad en bipedestación (Actividad) -> Restricción para cocinar/preparar alimentos (Actividad)",
+                    "Incapacidad para subir escaleras (Actividad) -> Restricción en desempeño laboral en edificio de 3 pisos sin ascensor (Participación)"
+                ]
+            },
+            {
+                id: "case-02",
+                title: "Caso 02: Accidente Cerebrovascular (ACV) con Hemiparesia Izquierda",
+                difficulty: "Avanzado",
+                text: `Paciente masculino de 64 años, jubilado de la construcción, con antecedentes de hipertensión arterial mal controlada. Sufrió un evento vascular de tipo isquémico en la arteria cerebral media derecha hace 4 meses.\n\nActualmente presenta:\n- Hemiparesia flácida residual en hemicuerpo izquierdo, con incipiente patrón espástico flexor en extremidad superior izquierda.\n- Fuerza en extremidades izquierdas calificada en 2/5 (Daniels) en miembro superior y 3/5 en miembro inferior.\n- Pérdida notable de la sensibilidad propioceptiva y táctil en el lado izquierdo.\n- Alteración del equilibrio dinámico y control postural, requiriendo asistencia para las transferencias de sentado a bípedo.\n- Logra marcha comunitaria limitada en distancias cortas utilizando un bastón de 4 apoyos con supervisión.\n\nDebido a estas deficiencias, el paciente tiene dificultades para realizar su higiene personal de manera independiente (requiere ayuda en la ducha), y no logra vestirse solo por la limitación de la motricidad fina de la mano afectada.\n\nSu vivienda tiene accesos estrechos y dos peldaños de entrada. Previo al ACV, era un miembro muy activo de la comunidad vecinal, encargándose de la mantención de la plaza del barrio, rol que ha tenido que suspender de forma indefinida, manifestando sentirse inútil y una carga familiar.`,
+                estructuras: [
+                    "Hemisferio cerebral derecho (Arteria cerebral media)",
+                    "Vías piramidales"
+                ],
+                funciones: [
+                    "Hemiparesia izquierda (Deficiencia motora)",
+                    "Pérdida de sensibilidad propioceptiva izquierda",
+                    "Alteración de equilibrio y control postural",
+                    "Patrón espástico flexor en miembro superior"
+                ],
+                actividades: [
+                    "Realizar higiene personal (ducha)",
+                    "Vestirse de forma independiente",
+                    "Transferencia de sedestación a bipedestación",
+                    "Marcha independiente en la comunidad"
+                ],
+                participacion: [
+                    "Mantención y cuidado de la plaza vecinal (Rol comunitario)",
+                    "Inclusión en dinámicas familiares sin percibirse como carga",
+                    "Participación en actividades recreativas fuera del hogar"
+                ],
+                vinculos: [
+                    "Pérdida de equilibrio y propiocepción (Función) -> Dificultad para transferencia sedestación-bipedestación (Actividad)",
+                    "Fuerza disminuida 2/5 en miembro superior (Función) -> Dificultad extrema para vestirse solo (Actividad)",
+                    "Dificultad de marcha y traslado (Actividad) -> Restricción para mantener y limpiar la plaza vecinal (Participación)"
+                ]
+            }
+        ];
+
+
+        // --- 2. PERSISTENCIA LOCAL ---
+        const STORAGE_KEY = 'cif_constructor_cases_v1';
+
+        function saveCasesToStorage() {
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(appCases)); } catch(e) {}
+        }
+
+        function loadCasesFromStorage() {
+            try { const s = localStorage.getItem(STORAGE_KEY); return s ? JSON.parse(s) : null; } catch(e) { return null; }
+        }
+
+        // --- 3. VARIABLES DE ESTADO LOCAL ---
+        const saved = loadCasesFromStorage();
+        let appCases = (saved && saved.length > 0) ? saved : [...DEFAULT_CASES];
+        let currentCaseIndex = 0;
+        let studentMap = {
+            structures: [],
+            functions: [],
+            activities: [],
+            participation: []
+        };
+        let currentRound = 0;
+        const maxRounds = 3;
+        let sessionHistory = [];
+        let globalCoherence = 0;
+        let currentSemaforos = { structures: 'gray', functions: 'gray', activities: 'gray', participation: 'gray' };
+        let currentFeedbackList = [];
+        let appStage = 'editor'; 
+
+        // AUTENTICACIÓN DOCENTE
+        let isTeacherAuthenticated = false;
+        const TEACHER_PASSWORD_VAL = "KinUOH00";
+
+        // --- 4. INICIALIZACIÓN ---
+        window.onload = function() {
+            populateCaseSelectors();
+            loadCase(0);
+            checkApiStatus();
+        };
+
+        // --- 4. PANEL & VIEW NAVIGATION WITH SECURITY GATE ---
+        function switchView(mode) {
+            const btnStudent = document.getElementById('btn-tab-student');
+            const btnTeacher = document.getElementById('btn-tab-teacher');
+            const viewStudent = document.getElementById('student-view');
+            const viewTeacher = document.getElementById('teacher-view');
+
+            if (mode === 'student') {
+                btnStudent.className = "px-4 py-2 font-semibold text-sm rounded-lg bg-teal-50 text-teal-700 border-b-2 border-teal-600 transition-all flex items-center gap-2";
+                btnTeacher.className = "px-4 py-2 font-semibold text-sm rounded-lg text-slate-600 hover:text-teal-700 hover:bg-slate-50 transition-all flex items-center gap-2";
+                viewStudent.classList.remove('hidden');
+                viewTeacher.classList.add('hidden');
+            } else if (mode === 'teacher') {
+                if (isTeacherAuthenticated) {
+                    btnTeacher.className = "px-4 py-2 font-semibold text-sm rounded-lg bg-teal-50 text-teal-700 border-b-2 border-teal-600 transition-all flex items-center gap-2";
+                    btnStudent.className = "px-4 py-2 font-semibold text-sm rounded-lg text-slate-600 hover:text-teal-700 hover:bg-slate-50 transition-all flex items-center gap-2";
+                    viewTeacher.classList.remove('hidden');
+                    viewStudent.classList.add('hidden');
+                    loadCaseInTeacherEditor(currentCaseIndex);
+                } else {
+                    openGatekeeper();
+                }
+            }
+        }
+
+        // --- 5. LÓGICA GATEKEEPER (CONTRASEÑA DOCENTE) ---
+        function openGatekeeper() {
+            document.getElementById('gatekeeperPassword').value = '';
+            document.getElementById('gatekeeperError').classList.add('hidden');
+            document.getElementById('gatekeeperModal').classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('gatekeeperPassword').focus();
+            }, 100);
+        }
+
+        function cancelGatekeeper() {
+            document.getElementById('gatekeeperModal').classList.add('hidden');
+            switchView('student');
+        }
+
+        function handleGatekeeperKeyPress(event) {
+            if (event.key === 'Enter') {
+                verifyGatekeeper();
+            }
+        }
+
+        function verifyGatekeeper() {
+            const entered = document.getElementById('gatekeeperPassword').value;
+            const errorBox = document.getElementById('gatekeeperError');
+
+            if (entered === TEACHER_PASSWORD_VAL) {
+                isTeacherAuthenticated = true;
+                document.getElementById('gatekeeperModal').classList.add('hidden');
+                
+                const lockBadge = document.getElementById('lockBadge');
+                lockBadge.textContent = "Acceso Permitido";
+                lockBadge.className = "inline-block text-[9px] bg-emerald-100 text-emerald-800 border border-emerald-200 px-1.5 py-0.5 rounded font-extrabold ml-1";
+
+                showToast("Acceso de docente autorizado correctamente", "success");
+                switchView('teacher');
+            } else {
+                errorBox.classList.remove('hidden');
+                showToast("Acceso denegado: clave incorrecta", "error");
+            }
+        }
+
+        function lockTeacherPanel() {
+            isTeacherAuthenticated = false;
+            
+            const lockBadge = document.getElementById('lockBadge');
+            lockBadge.textContent = "Bloqueado";
+            lockBadge.className = "inline-block text-[9px] bg-amber-100 text-amber-800 border border-amber-200 px-1.5 py-0.5 rounded font-extrabold ml-1";
+            
+            switchView('student');
+            showToast("Panel docente cerrado y bloqueado", "info");
+        }
+
+        // --- 6. POBLAR DROPDOWNS ---
+        function populateCaseSelectors() {
+            const selector = document.getElementById('caseSelector');
+            const teacherSelector = document.getElementById('teacherCaseSelector');
+            
+            selector.innerHTML = '';
+            teacherSelector.innerHTML = '';
+            
+            appCases.forEach((c, idx) => {
+                const opt = document.createElement('option');
+                opt.value = idx;
+                opt.textContent = c.title;
+                selector.appendChild(opt.cloneNode(true));
+                teacherSelector.appendChild(opt);
+            });
+        }
+
+        // --- 7. LOGICA DEL ESTUDIANTE: TAGS & MAPA ---
+        function loadCase(index) {
+            currentCaseIndex = parseInt(index);
+            const activeCase = appCases[currentCaseIndex];
+            
+            document.getElementById('caseTitleDisplay').textContent = activeCase.title;
+            document.getElementById('caseTextDisplay').textContent = activeCase.text;
+            document.getElementById('caseDifficulty').textContent = activeCase.difficulty;
+            
+            restartSession();
+        }
+
+        function handleTagInputKeyPress(event, domain) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                addTag(domain);
+            }
+        }
+
+        function addTag(domain) {
+            const input = document.getElementById(`input-${domain}`);
+            const text = input.value.trim();
+            
+            if (!text) return;
+            
+            if (studentMap[domain].some(item => item.toLowerCase() === text.toLowerCase())) {
+                showToast("Este ítem ya está en la lista", "warning");
+                return;
+            }
+            
+            studentMap[domain].push(text);
+            input.value = '';
+            renderTags(domain);
+        }
+
+        function removeTag(domain, index) {
+            studentMap[domain].splice(index, 1);
+            renderTags(domain);
+        }
+
+        function renderTags(domain) {
+            const container = document.getElementById(`tags-${domain}`);
+            container.innerHTML = '';
+            
+            if (studentMap[domain].length === 0) {
+                container.innerHTML = `<span class="text-xs text-slate-400 italic m-auto select-none pointer-events-none py-4">Sin hallazgos agregados</span>`;
+                return;
+            }
+            
+            studentMap[domain].forEach((text, idx) => {
+                const tag = document.createElement('div');
+                tag.className = "flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 text-xs px-2.5 py-1 rounded-xl transition-all font-medium select-none";
+                tag.innerHTML = `
+                    <span>${text}</span>
+                    <button onclick="removeTag('${domain}', ${idx})" class="text-slate-400 hover:text-rose-600 font-bold ml-1 text-sm focus:outline-none transition-colors">
+                        &times;
+                    </button>
+                `;
+                container.appendChild(tag);
+            });
+        }
+
+        function resetCurrentMap() {
+            studentMap = { structures: [], functions: [], activities: [], participation: [] };
+            renderTags('structures');
+            renderTags('functions');
+            renderTags('activities');
+            renderTags('participation');
+            showToast("Borrador actual limpiado", "info");
+        }
+
+        // --- 8. CAPA DE CONECTIVIDAD: MANEJO DE PROVEEDORES (NATIVO / OPENROUTER) ---
+        function handleProviderChange() {
+            const provider = document.getElementById('apiProvider').value;
+            const modelContainer = document.getElementById('modelSelectorContainer');
+            const keyContainer = document.getElementById('apiKeyInputContainer');
+            
+            if (provider === 'simulated') {
+                modelContainer.classList.add('hidden');
+                keyContainer.classList.add('hidden');
+            } else if (provider === 'gemini') {
+                modelContainer.classList.add('hidden');
+                keyContainer.classList.remove('hidden');
+            } else if (provider === 'openrouter') {
+                modelContainer.classList.remove('hidden');
+                keyContainer.classList.remove('hidden');
+            }
+            checkApiStatus();
+        }
+
+        function checkApiStatus() {
+            const provider = document.getElementById('apiProvider').value;
+            const key = document.getElementById('geminiApiKey').value.trim();
+            const badge = document.getElementById('apiStatusBadge');
+            
+            if (provider === 'simulated') {
+                badge.className = "w-3 h-3 rounded-full bg-amber-400 animate-pulse";
+                badge.title = "Modo Simulado Activo";
+            } else if (key) {
+                badge.className = "w-3 h-3 rounded-full bg-emerald-500 animate-pulse";
+                badge.title = `Modo ${provider === 'gemini' ? 'Gemini' : 'OpenRouter'} Conectado`;
+            } else {
+                badge.className = "w-3 h-3 rounded-full bg-rose-500 animate-pulse";
+                badge.title = "Requiere Clave de API";
+            }
+        }
+
+        async function requestFeedback() {
+            const totalItems = studentMap.structures.length + studentMap.functions.length + studentMap.activities.length + studentMap.participation.length;
+            if (totalItems === 0) {
+                showToast("Por favor ingresa al menos un hallazgo en cualquier dominio antes de evaluar.", "warning");
+                return;
+            }
+
+            const provider = document.getElementById('apiProvider').value;
+            const apiKey = document.getElementById('geminiApiKey').value.trim();
+
+            if (provider !== 'simulated' && !apiKey) {
+                showToast("Por favor introduce una clave de API válida para usar el servicio seleccionado.", "error");
+                return;
+            }
+
+            // Cambiar estados de interfaz
+            document.getElementById('feedbackInitialState').classList.add('hidden');
+            document.getElementById('feedbackResultList').classList.add('hidden');
+            document.getElementById('feedbackLoading').classList.remove('hidden');
+            document.getElementById('btnRequestFeedback').disabled = true;
+
+            const activeCase = appCases[currentCaseIndex];
+            let evaluationResult;
+
+            try {
+                if (provider === 'gemini') {
+                    document.getElementById('loadingTitle').textContent = "Conectando con Google Gemini Nativo...";
+                    document.getElementById('loadingSubtitle').textContent = "Evaluando consistencia de enlaces lógicos...";
+                    evaluationResult = await callGeminiAPI(apiKey, activeCase, studentMap, currentRound);
+                } else if (provider === 'openrouter') {
+                    const model = document.getElementById('openrouterModel').value;
+                    const modelLabel = document.getElementById('openrouterModel').options[document.getElementById('openrouterModel').selectedIndex].text;
+                    document.getElementById('loadingTitle').textContent = `Conectando con OpenRouter...`;
+                    document.getElementById('loadingSubtitle').textContent = `Procesando mediante ${modelLabel}`;
+                    evaluationResult = await callOpenRouterAPI(apiKey, model, activeCase, studentMap, currentRound);
+                } else {
+                    document.getElementById('loadingTitle').textContent = "Iniciando Simulador Semántico Local...";
+                    document.getElementById('loadingSubtitle').textContent = "Mapeando elementos contra la rúbrica del docente...";
+                    evaluationResult = await simulateClinicalReasoning(activeCase, studentMap, currentRound);
+                }
+
+                applyEvaluation(evaluationResult);
+            } catch (err) {
+                console.error(err);
+                showToast("Error de conexión. Activando simulador local de contingencia.", "warning");
+                // Contingencia automática
+                evaluationResult = await simulateClinicalReasoning(activeCase, studentMap, currentRound);
+                applyEvaluation(evaluationResult);
+            }
+        }
+
+        // --- SISTEMAS DE PROMPTING DE EVALUACIÓN ---
+        function getSystemInstructionPayload(caseObj, map) {
+            return `Eres un tutor experto en Kinesiología y en la Clasificación Internacional del Funcionamiento (CIF) de la OMS, asignado a la Universidad de O'Higgins. Tu rol es EVALUAR y GUIAR el razonamiento clínico de estudiantes de forma RIGUROSA, DETALLADA y SOCRÁTICA.
+
+RÚBRICA OCULTA DEL DOCENTE (no la reveles directamente):
+- Estructuras corporales esperadas: ${JSON.stringify(caseObj.estructuras)}
+- Funciones corporales esperadas: ${JSON.stringify(caseObj.funciones)}
+- Actividades esperadas: ${JSON.stringify(caseObj.actividades)}
+- Participación esperada: ${JSON.stringify(caseObj.participacion)}
+- Vínculos causales clave: ${JSON.stringify(caseObj.vinculos)}
+
+MAPA ACTUAL DEL ESTUDIANTE:
+- Estructuras: ${JSON.stringify(map.structures)}
+- Funciones: ${JSON.stringify(map.functions)}
+- Actividades: ${JSON.stringify(map.activities)}
+- Participación: ${JSON.stringify(map.participation)}
+
+REGLAS DE EVALUACIÓN:
+1. Analiza CADA dominio individualmente en profundidad: ¿qué ingresó el estudiante? ¿Está bien clasificado según la CIF? ¿Qué falta o sobra conceptualmente?
+2. Evalúa los PUENTES LÓGICOS entre dominios: Estructura→Función, Función→Actividad, Actividad→Participación.
+3. Detecta ERRORES DE CLASIFICACIÓN: ej. si el estudiante puso una función en estructuras, o una actividad en participación.
+4. Sé EXIGENTE: si hay ítems vagos o demasiado generales, señálalo funcionalmente.
+5. PROHIBIDO: no nombres ítems exactos de la rúbrica que falten. Usa preguntas orientadoras o descripciones funcionales.
+6. PROHIBIDO: no digas "correcto" o "incorrecto" directamente. Di "consistente", "inespecífico", "bien fundamentado", "requiere mayor precisión".
+7. Entrega feedback para CADA dominio que tenga problemas (no solo 2 en total).
+8. Cada feedback debe incluir: valoración, fortaleza observada, brecha detectada, pregunta socrática y pista sin revelar la respuesta.
+
+RETORNA ÚNICAMENTE el siguiente objeto JSON estricto, sin texto externo ni bloques Markdown:
+{
+  "semaforos": {
+    "structures": "verde|amarillo|rojo",
+    "functions": "verde|amarillo|rojo",
+    "activities": "verde|amarillo|rojo",
+    "participation": "verde|amarillo|rojo"
+  },
+  "coherencia_global": 0,
+  "resumen_diagnostico": "Evaluación global de 2-3 oraciones: estado general del mapa, nivel de coherencia inter-dominio y madurez del razonamiento clínico observado.",
+  "feedback_por_dominio": [
+    {
+      "dominio": "estructuras|funciones|actividades|participacion",
+      "par": "estructuras → funciones",
+      "nivel": "amarillo",
+      "valoracion": "Frase corta que evalúa el estado de este dominio sin revelar ítems.",
+      "fortaleza": "Qué hizo bien el estudiante en este dominio (vacío si nada destacable).",
+      "brecha": "Qué está faltando o es incorrecto conceptualmente, sin revelar ítems exactos.",
+      "pregunta_socratica": "Una pregunta que lo haga razonar sin darle la respuesta.",
+      "pista": "Una pista sutil que oriente sin revelar el ítem exacto de la rúbrica."
+    }
+  ],
+  "conexiones_no_identificadas": [
+    "Descripción funcional de un puente lógico que el estudiante no estableció, sin revelar los ítems exactos."
+  ],
+  "pregunta_reflexion_final": "Una pregunta metacognitiva integradora que conecte todo el caso clínico con el modelo CIF."
+}`;
+        }
+
+        // API de Gemini
+        async function callGeminiAPI(apiKey, caseObj, map, round) {
+            const systemPrompt = getSystemInstructionPayload(caseObj, map);
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+            const payload = {
+                contents: [{
+                    parts: [{ text: `Analiza y evalúa la consistencia de las clasificaciones realizadas por el estudiante en base a la rúbrica y al caso clínico expuesto.` }]
+                }],
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+                generationConfig: {
+                    responseMimeType: "application/json"
+                }
+            };
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errBody = await response.text();
+                throw new Error(`Google API ${response.status}: ${errBody}`);
+            }
+
+            const result = await response.json();
+            const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!text) throw new Error("Gemini devolvió respuesta vacía");
+            return JSON.parse(text);
+        }
+
+        // API de OpenRouter
+        async function callOpenRouterAPI(apiKey, model, caseObj, map, round) {
+            const systemPrompt = getSystemInstructionPayload(caseObj, map);
+            const url = "https://openrouter.ai/api/v1/chat/completions";
+            const payload = {
+                model: model,
+                messages: [
+                    {
+                        role: "system",
+                        content: systemPrompt
+                    },
+                    {
+                        role: "user",
+                        content: `Caso Clínico:\n${caseObj.text}\n\nResponde ÚNICAMENTE con el objeto JSON de análisis, sin texto adicional ni bloques de código.`
+                    }
+                ]
+            };
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`,
+                    'HTTP-Referer': window.location.href,
+                    'X-Title': 'Constructor de Mapa CIF - UOH'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errBody = await response.text();
+                throw new Error(`OpenRouter API ${response.status}: ${errBody}`);
+            }
+
+            const result = await response.json();
+            const text = result.choices?.[0]?.message?.content;
+            if (!text) throw new Error("OpenRouter devolvió respuesta vacía");
+
+            // Extrae JSON aunque el modelo envuelva la respuesta en ```json ... ```
+            const jsonMatch = text.match(/\{[\s\S]*\}/);
+            if (!jsonMatch) throw new Error("No se encontró JSON válido en la respuesta");
+            return JSON.parse(jsonMatch[0]);
+        }
+
+        // --- 9. SIMULADOR INTELIGENTE LOCAL (CONTINGENCIA) ---
+        function simulateClinicalReasoning(caseObj, map, round) {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    let semaforos = { structures: 'rojo', functions: 'rojo', activities: 'rojo', participation: 'rojo' };
+                    let feedback_por_dominio = [];
+                    let scoreSum = 0;
+
+                    // --- ESTRUCTURAS ---
+                    const hasStructs = map.structures.length > 0;
+                    const matchesStruct = map.structures.some(s => {
+                        const l = s.toLowerCase();
+                        return l.includes('rodilla') || l.includes('articular') || l.includes('cartílago') || l.includes('espacio') || l.includes('cerebral') || l.includes('cortical') || l.includes('vía') || l.includes('piram') || l.includes('nervio') || l.includes('músculo') || l.includes('tendón');
+                    });
+                    if (hasStructs && matchesStruct) {
+                        semaforos.structures = 'verde';
+                        scoreSum += 25;
+                    } else if (hasStructs) {
+                        semaforos.structures = 'amarillo';
+                        scoreSum += 10;
+                        feedback_por_dominio.push({
+                            dominio: 'estructuras', par: 'estructuras → funciones', nivel: 'amarillo',
+                            valoracion: 'Clasificación inespecífica',
+                            fortaleza: 'Reconociste que existe una estructura comprometida en el caso.',
+                            brecha: 'Los ítems ingresados son demasiado generales o no corresponden a estructuras morfológicas concretas según la CIF. Las estructuras deben ser tejidos, órganos o sistemas anatómicos con alteración observable.',
+                            pregunta_socratica: '¿Qué tejido específico es visible o palpable en la evaluación física del caso? ¿Hay datos de imagenología o de la exploración que indiquen una alteración morfológica concreta?',
+                            pista: 'Busca en el texto del caso términos de la evaluación física: hallazgos radiológicos, palpación de tejidos, pruebas especiales que apunten a una estructura anatómica.'
+                        });
+                    } else {
+                        semaforos.structures = 'rojo';
+                        feedback_por_dominio.push({
+                            dominio: 'estructuras', par: 'estructuras → funciones', nivel: 'rojo',
+                            valoracion: 'Dominio vacío',
+                            fortaleza: '',
+                            brecha: 'El dominio de Estructuras Corporales está completamente vacío. Sin identificar la estructura anatómica comprometida, el razonamiento CIF carece de base morfológica.',
+                            pregunta_socratica: '¿Qué dice el informe de imagenología o la evaluación física sobre estructuras con daño o alteración morfológica en este paciente?',
+                            pista: 'Revisa el caso clínico buscando palabras como: reducción de espacio articular, atrofia, lesión cortical, desgaste, fractura, inflamación de tejidos.'
+                        });
+                    }
+
+                    // --- FUNCIONES ---
+                    const hasFuncs = map.functions.length > 0;
+                    const matchesFunc = map.functions.some(f => {
+                        const l = f.toLowerCase();
+                        return l.includes('dolor') || l.includes('fuerza') || l.includes('debilidad') || l.includes('sensibilidad') || l.includes('equilibrio') || l.includes('crepitación') || l.includes('resistencia') || l.includes('rango') || l.includes('espasticidad') || l.includes('tono') || l.includes('coordinación');
+                    });
+                    if (hasFuncs && matchesFunc) {
+                        semaforos.functions = 'verde';
+                        scoreSum += 25;
+                    } else if (hasFuncs) {
+                        semaforos.functions = 'amarillo';
+                        scoreSum += 10;
+                        feedback_por_dominio.push({
+                            dominio: 'funciones', par: 'estructuras → funciones → actividades', nivel: 'amarillo',
+                            valoracion: 'Funciones parcialmente identificadas',
+                            fortaleza: 'Reconociste que existen funciones corporales alteradas.',
+                            brecha: 'Las funciones ingresadas no reflejan con precisión las deficiencias fisiológicas cuantificadas en el caso (dolor con EVA, fuerza en escala Daniels, propioceptiva, equilibrio). Las funciones CIF deben ser medibles y observables.',
+                            pregunta_socratica: '¿Cuáles de los hallazgos del examen kinésico representan una función fisiológica alterada? ¿Hay valores numéricos en el caso que evidencien estas deficiencias?',
+                            pista: 'Revisa escalas como EVA (dolor), Daniels (fuerza muscular), rangos articulares. Cada valor alterado probablemente corresponde a una función CIF.'
+                        });
+                    } else {
+                        semaforos.functions = 'rojo';
+                        feedback_por_dominio.push({
+                            dominio: 'funciones', par: 'funciones → actividades', nivel: 'rojo',
+                            valoracion: 'Dominio vacío',
+                            fortaleza: '',
+                            brecha: 'No se registraron funciones corporales. Sin identificar las deficiencias fisiológicas, es imposible explicar por qué el paciente tiene limitaciones en sus actividades.',
+                            pregunta_socratica: '¿Qué funciones del cuerpo (dolor, fuerza, equilibrio, sensibilidad, resistencia) están claramente alteradas según la evaluación física del caso?',
+                            pista: 'Cada ítem del examen físico que muestre una medición alterada es candidato a ser una función CIF comprometida.'
+                        });
+                    }
+
+                    // --- ACTIVIDADES ---
+                    const hasActs = map.activities.length > 0;
+                    const matchesAct = map.activities.some(a => {
+                        const l = a.toLowerCase();
+                        return l.includes('subir') || l.includes('bajar') || l.includes('bipedestación') || l.includes('escalera') || l.includes('cocinar') || l.includes('higiene') || l.includes('vestir') || l.includes('caminar') || l.includes('marcha') || l.includes('transferencia') || l.includes('ducha') || l.includes('preparar');
+                    });
+                    if (hasActs && matchesAct) {
+                        semaforos.activities = 'verde';
+                        scoreSum += 25;
+                    } else if (hasActs) {
+                        semaforos.activities = 'amarillo';
+                        scoreSum += 10;
+                        feedback_por_dominio.push({
+                            dominio: 'actividades', par: 'actividades → participación', nivel: 'amarillo',
+                            valoracion: 'Actividades poco específicas',
+                            fortaleza: 'Identificaste que el paciente tiene limitaciones en la ejecución de tareas.',
+                            brecha: 'Las actividades registradas son demasiado genéricas o abstractas. La CIF requiere que las actividades sean acciones concretas y observables que el paciente realiza en su vida diaria.',
+                            pregunta_socratica: '¿Qué tareas específicas del diario vivir menciona el caso que el paciente ya no puede hacer o hace con dificultad? ¿Son acciones medibles y concretas?',
+                            pista: 'Busca verbos de acción en el caso: "no puede subir", "requiere ayuda para", "ha dejado de", "le cuesta". Esas acciones son las limitaciones de actividad.'
+                        });
+                    } else {
+                        semaforos.activities = 'rojo';
+                        feedback_por_dominio.push({
+                            dominio: 'actividades', par: 'actividades → participación', nivel: 'rojo',
+                            valoracion: 'Dominio vacío',
+                            fortaleza: '',
+                            brecha: 'No se registraron limitaciones en la actividad. Este dominio es el puente fundamental entre las deficiencias físicas y las restricciones sociales del paciente.',
+                            pregunta_socratica: '¿Qué acciones cotidianas concretas (no roles sociales, sino tareas físicas) le resultan difíciles o imposibles al paciente a causa de sus deficiencias?',
+                            pista: 'Diferencia actividades (tareas concretas: cocinar, caminar, vestirse) de participación (roles sociales: trabajar, pertenecer a un club). ¿Qué tareas físicas menciona el caso?'
+                        });
+                    }
+
+                    // --- PARTICIPACIÓN ---
+                    const hasParts = map.participation.length > 0;
+                    const matchesPart = map.participation.some(p => {
+                        const l = p.toLowerCase();
+                        return l.includes('laboral') || l.includes('trabajo') || l.includes('secretaria') || l.includes('tejido') || l.includes('aislamiento') || l.includes('plaza') || l.includes('vecinal') || l.includes('social') || l.includes('familiar') || l.includes('rol') || l.includes('comunidad') || l.includes('plaza');
+                    });
+                    if (hasParts && matchesPart) {
+                        semaforos.participation = 'verde';
+                        scoreSum += 25;
+                    } else if (hasParts) {
+                        semaforos.participation = 'amarillo';
+                        scoreSum += 10;
+                        feedback_por_dominio.push({
+                            dominio: 'participacion', par: 'actividades → participación', nivel: 'amarillo',
+                            valoracion: 'Restricciones de participación genéricas',
+                            fortaleza: 'Reconociste que el paciente tiene restricciones en su vida social o laboral.',
+                            brecha: 'Las restricciones de participación deben reflejar roles vitales específicos del paciente: su ocupación, sus actividades sociales, su vida comunitaria. Lo ingresado es demasiado general.',
+                            pregunta_socratica: '¿Cuál es el rol laboral, familiar o comunitario específico de este paciente que está siendo afectado? ¿Qué nos dice el caso sobre su vida social antes y después de la condición?',
+                            pista: 'La participación responde a: ¿en qué situaciones vitales este paciente ya no puede involucrarse como antes? Busca el contexto de vida del paciente en el caso clínico.'
+                        });
+                    } else {
+                        semaforos.participation = 'rojo';
+                        feedback_por_dominio.push({
+                            dominio: 'participacion', par: 'actividades → participación', nivel: 'rojo',
+                            valoracion: 'Dominio vacío',
+                            fortaleza: '',
+                            brecha: 'No se registraron restricciones de participación. Sin este dominio, el mapa CIF no cumple su propósito biopsicosocial: visibilizar el impacto funcional en la vida real del paciente.',
+                            pregunta_socratica: '¿Qué nos dice el caso sobre el impacto en la vida laboral, social o familiar del paciente? ¿Qué roles vitales ha perdido o visto reducidos?',
+                            pista: 'La participación es el "para qué" de la rehabilitación. Pregúntate: ¿qué quería poder seguir haciendo este paciente en su vida social, laboral o comunitaria?'
+                        });
+                    }
+
+                    const coherencia_global = Math.min(100, Math.round(scoreSum));
+                    const domainsOk = [semaforos.structures, semaforos.functions, semaforos.activities, semaforos.participation].filter(s => s === 'verde').length;
+
+                    const resumen_diagnostico = coherencia_global >= 75
+                        ? `Tu mapa CIF muestra una coherencia sólida (${coherencia_global}%). Los dominios presentan elementos pertinentes y los puentes causales son reconocibles. El foco ahora es precisar la especificidad clínica de cada ítem y asegurar que los 4 dominios estén bien articulados entre sí.`
+                        : coherencia_global >= 40
+                        ? `Tu mapa CIF tiene una coherencia parcial (${coherencia_global}%). Identificaste correctamente ${domainsOk} de 4 dominios, pero existen brechas importantes en la especificidad clínica y en los puentes lógicos entre dominios. Revisa cada área con las preguntas orientadoras.`
+                        : `Tu mapa CIF presenta una coherencia inicial baja (${coherencia_global}%). Varios dominios están vacíos o con clasificaciones imprecisas. Esto es normal en las primeras rondas: usa las preguntas socrátias para releer el caso con mayor detalle clínico.`;
+
+                    const conexiones_no_identificadas = [];
+                    if (!hasActs || !matchesAct) conexiones_no_identificadas.push('No se estableció el puente entre las deficiencias de función (dolor, fuerza, equilibrio) y las tareas concretas de la vida diaria que estas impiden ejecutar.');
+                    if (!hasParts) conexiones_no_identificadas.push('No se identificó la cadena causal completa desde la limitación de actividad hasta la restricción en la participación social o laboral del paciente.');
+                    if (!hasStructs) conexiones_no_identificadas.push('El origen morfológico de las deficiencias funcionales no está especificado, dejando la base del razonamiento CIF sin sustento anatómico.');
+
+                    const pregunta_reflexion_final = coherencia_global >= 75
+                        ? '¿Cómo se relacionan las estructuras comprometidas que identificaste con las restricciones de participación del paciente? ¿Puedes trazar una cadena causal completa de inicio a fin del mapa?'
+                        : '¿Si tuvieras que explicarle a este paciente por qué no puede hacer lo que hacía antes, qué cadena de eventos biológicos, funcionales y sociales describirías desde la alteración anatómica hasta su impacto en la vida cotidiana?';
+
+                    resolve({ semaforos, coherencia_global, resumen_diagnostico, feedback_por_dominio, conexiones_no_identificadas, pregunta_reflexion_final });
+                }, 1500);
+            });
+        }
+
+        function applyEvaluation(res) {
+            document.getElementById('feedbackLoading').classList.add('hidden');
+            document.getElementById('feedbackResultList').classList.remove('hidden');
+            document.getElementById('btnRequestFeedback').disabled = false;
+
+            globalCoherence = res.coherencia_global;
+            currentSemaforos = res.semaforos;
+            currentFeedbackList = res.feedback_por_dominio || [];
+
+            updateSemaphoreStyles('structures', currentSemaforos.structures);
+            updateSemaphoreStyles('functions', currentSemaforos.functions);
+            updateSemaphoreStyles('activities', currentSemaforos.activities);
+            updateSemaphoreStyles('participation', currentSemaforos.participation);
+
+            updateCoherenceGauge(globalCoherence);
+            renderFeedbackResult(res);
+
+            sessionHistory.push({
+                round: currentRound,
+                map: JSON.parse(JSON.stringify(studentMap)),
+                semaforos: { ...currentSemaforos },
+                globalCoherence,
+                feedback: currentFeedbackList,
+                fullResult: res
+            });
+
+            currentRound++;
+            updateRoundIndicator();
+
+            if (currentRound > maxRounds) {
+                transitionToReflection();
+            } else {
+                showToast(`Retroalimentación de Ronda ${currentRound - 1} procesada exitosamente`, "success");
+            }
+        }
+
+        function renderFeedbackResult(res) {
+            const container = document.getElementById('feedbackResultList');
+            container.innerHTML = '';
+
+            const list = res.feedback_por_dominio || [];
+            const resumen = res.resumen_diagnostico || '';
+            const conexiones = res.conexiones_no_identificadas || [];
+            const preguntaFinal = res.pregunta_reflexion_final || '';
+
+            // --- Resumen diagnóstico global ---
+            if (resumen) {
+                const coherence = res.coherencia_global || 0;
+                const colorResumen = coherence >= 75 ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                                   : coherence >= 45 ? 'bg-amber-50 border-amber-200 text-amber-900'
+                                   : 'bg-rose-50 border-rose-200 text-rose-900';
+                const iconColor = coherence >= 75 ? 'text-emerald-500' : coherence >= 45 ? 'text-amber-500' : 'text-rose-500';
+                container.insertAdjacentHTML('beforeend', `
+                    <div class="border rounded-xl p-4 ${colorResumen} flex gap-3">
+                        <svg class="w-5 h-5 shrink-0 mt-0.5 ${iconColor}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                        <div>
+                            <p class="text-[10px] font-extrabold uppercase tracking-wider mb-1 opacity-70">Diagnóstico Global del Mapa</p>
+                            <p class="text-xs leading-relaxed font-medium">${resumen}</p>
+                        </div>
+                    </div>`);
+            }
+
+            // --- Feedback por dominio ---
+            if (list.length === 0 && !resumen) {
+                container.insertAdjacentHTML('beforeend', `
+                    <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl p-4 flex items-center gap-3">
+                        <svg class="w-6 h-6 shrink-0 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <div>
+                            <h5 class="font-bold text-sm">¡Coherencia de razonamiento óptima!</h5>
+                            <p class="text-xs">Tu mapa presenta un flujo relacional impecable según el modelo biopsicosocial.</p>
+                        </div>
+                    </div>`);
+            }
+
+            const domainLabels = { estructuras: 'Estructuras Corporales', funciones: 'Funciones Corporales', actividades: 'Limitaciones de Actividad', participacion: 'Restricciones de Participación' };
+
+            list.forEach(fb => {
+                const isRed = fb.nivel === 'rojo' || fb.nivel === 'red';
+                const isGreen = fb.nivel === 'verde' || fb.nivel === 'green';
+                const borderColor = isGreen ? 'border-emerald-300' : isRed ? 'border-rose-300' : 'border-amber-300';
+                const headerBg  = isGreen ? 'bg-emerald-50' : isRed ? 'bg-rose-50' : 'bg-amber-50';
+                const tagColor  = isGreen ? 'bg-emerald-100 text-emerald-800' : isRed ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800';
+                const dot       = isGreen ? 'bg-emerald-500' : isRed ? 'bg-rose-500' : 'bg-amber-500';
+                const domLabel  = domainLabels[fb.dominio] || fb.par || '—';
+
+                const fortalezaHtml = fb.fortaleza ? `
+                    <div class="bg-emerald-50 border border-emerald-100 rounded-lg p-2.5 flex gap-2">
+                        <svg class="w-3.5 h-3.5 shrink-0 mt-0.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                        <div><p class="text-[10px] font-extrabold text-emerald-700 uppercase mb-0.5">Fortaleza</p><p class="text-xs text-emerald-800 leading-snug">${fb.fortaleza}</p></div>
+                    </div>` : '';
+
+                const brechaHtml = fb.brecha ? `
+                    <div class="bg-rose-50 border border-rose-100 rounded-lg p-2.5 flex gap-2">
+                        <svg class="w-3.5 h-3.5 shrink-0 mt-0.5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <div><p class="text-[10px] font-extrabold text-rose-700 uppercase mb-0.5">Área de Mejora</p><p class="text-xs text-rose-800 leading-snug">${fb.brecha}</p></div>
+                    </div>` : '';
+
+                const socraticaHtml = fb.pregunta_socratica ? `
+                    <div class="bg-blue-50 border border-blue-100 rounded-lg p-2.5 flex gap-2">
+                        <svg class="w-3.5 h-3.5 shrink-0 mt-0.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <div><p class="text-[10px] font-extrabold text-blue-700 uppercase mb-0.5">Pregunta Socrática</p><p class="text-xs text-blue-800 leading-snug font-medium italic">${fb.pregunta_socratica}</p></div>
+                    </div>` : '';
+
+                const pistaHtml = fb.pista ? `
+                    <div class="bg-violet-50 border border-violet-100 rounded-lg p-2.5 flex gap-2">
+                        <svg class="w-3.5 h-3.5 shrink-0 mt-0.5 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                        <div><p class="text-[10px] font-extrabold text-violet-700 uppercase mb-0.5">Pista Pedagógica</p><p class="text-xs text-violet-800 leading-snug">${fb.pista}</p></div>
+                    </div>` : '';
+
+                container.insertAdjacentHTML('beforeend', `
+                    <div class="border ${borderColor} rounded-xl overflow-hidden">
+                        <div class="${headerBg} px-3.5 py-2.5 flex items-center justify-between border-b ${borderColor}">
+                            <div class="flex items-center gap-2">
+                                <div class="w-2.5 h-2.5 rounded-full ${dot}"></div>
+                                <span class="text-xs font-extrabold text-slate-800">${domLabel}</span>
+                                ${fb.par ? `<span class="text-[10px] text-slate-400 font-mono">${fb.par}</span>` : ''}
+                            </div>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${tagColor} capitalize">${fb.valoracion || fb.nivel}</span>
+                        </div>
+                        <div class="p-3.5 space-y-2.5 bg-white">
+                            ${fortalezaHtml}
+                            ${brechaHtml}
+                            ${socraticaHtml}
+                            ${pistaHtml}
+                        </div>
+                    </div>`);
+            });
+
+            // --- Conexiones no identificadas ---
+            if (conexiones.length > 0) {
+                const items = conexiones.map(c => `<li class="text-xs text-slate-700 leading-snug">${c}</li>`).join('');
+                container.insertAdjacentHTML('beforeend', `
+                    <div class="border border-slate-200 rounded-xl overflow-hidden">
+                        <div class="bg-slate-100 px-3.5 py-2.5 border-b border-slate-200 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                            <span class="text-[10px] font-extrabold text-slate-600 uppercase tracking-wider">Puentes Causales No Establecidos</span>
+                        </div>
+                        <ul class="p-3.5 bg-white space-y-1.5 list-disc list-inside">${items}</ul>
+                    </div>`);
+            }
+
+            // --- Pregunta de reflexión final ---
+            if (preguntaFinal) {
+                container.insertAdjacentHTML('beforeend', `
+                    <div class="bg-teal-50 border border-teal-200 rounded-xl p-4 flex gap-3">
+                        <svg class="w-5 h-5 shrink-0 mt-0.5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                        <div>
+                            <p class="text-[10px] font-extrabold text-teal-700 uppercase tracking-wider mb-1">Reflexión Integradora</p>
+                            <p class="text-xs text-teal-900 leading-relaxed font-medium italic">${preguntaFinal}</p>
+                        </div>
+                    </div>`);
+            }
+        }
+
+        function renderFeedbackList(list) {
+            renderFeedbackResult({ feedback_por_dominio: list });
+        }
+
+        function updateSemaphoreStyles(domain, color) {
+            const card = document.getElementById(`card-${domain}`);
+            const light = document.getElementById(`semaphore-${domain}`);
+            
+            card.classList.remove('border-emerald-500', 'bg-emerald-50/20', 'border-amber-500', 'bg-amber-50/20', 'border-rose-500', 'bg-rose-50/20');
+            light.className = "w-3 h-3 rounded-full shrink-0 transition-colors duration-500";
+
+            if (color === 'verde' || color === 'green') {
+                card.classList.add('border-emerald-500', 'bg-emerald-50/20');
+                light.classList.add('bg-emerald-500', 'shadow-[0_0_10px_#10b981]');
+            } else if (color === 'amarillo' || color === 'yellow') {
+                card.classList.add('border-amber-500', 'bg-amber-50/20');
+                light.classList.add('bg-amber-500', 'shadow-[0_0_10px_#f59e0b]');
+            } else if (color === 'rojo' || color === 'red') {
+                card.classList.add('border-rose-500', 'bg-rose-50/20');
+                light.classList.add('bg-rose-500', 'shadow-[0_0_10px_#f43f5e]');
+            } else {
+                light.classList.add('bg-slate-300');
+            }
+        }
+
+        function updateCoherenceGauge(val) {
+            const circle = document.getElementById('coherenceProgressCircle');
+            const text = document.getElementById('coherenceValueText');
+            const circumference = 175.9;
+            const offset = circumference - (val / 100) * circumference;
+            
+            circle.style.strokeDashoffset = offset;
+            text.textContent = `${val}%`;
+        }
+
+        function renderFeedbackList(list) {
+            const container = document.getElementById('feedbackResultList');
+            container.innerHTML = '';
+
+            if (list.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl p-4 flex items-center gap-3">
+                        <svg class="w-6 h-6 shrink-0 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <div>
+                            <h5 class="font-bold text-sm">¡Coherencia de razonamiento óptima!</h5>
+                            <p class="text-xs">Tu mapa presenta un flujo relacional impecable según el modelo biopsicosocial.</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            list.forEach(fb => {
+                const isRed = fb.nivel === 'rojo' || fb.nivel === 'red';
+                const bgClass = isRed ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-amber-50 border-amber-200 text-amber-800';
+                const tagColor = isRed ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700';
+
+                const card = document.createElement('div');
+                card.className = `border rounded-xl p-4 space-y-2 ${bgClass}`;
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${tagColor}">
+                            Relación: ${fb.par}
+                        </span>
+                        <span class="text-xs font-bold capitalize">${fb.nivel}</span>
+                    </div>
+                    <p class="text-xs leading-relaxed font-medium">${fb.mensaje}</p>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function updateRoundIndicator() {
+            const badge = document.getElementById('roundIndicatorBadge');
+            const statusBadge = document.getElementById('feedbackStatusBadge');
+            
+            if (currentRound > maxRounds) {
+                badge.textContent = `COMPLETADO`;
+                badge.className = "bg-rose-600 text-white font-bold px-3 py-1.5 rounded-xl text-xs tracking-wider uppercase";
+            } else {
+                badge.textContent = `Ronda ${currentRound} de ${maxRounds}`;
+                badge.className = "bg-teal-800 text-white font-bold px-3 py-1.5 rounded-xl text-xs tracking-wider uppercase";
+            }
+            
+            statusBadge.textContent = `Ronda ${currentRound - 1 >= 0 ? currentRound - 1 : 0}`;
+        }
+
+        // --- 10. REFLEXIÓN & REPORTE FINAL ---
+        function transitionToReflection() {
+            appStage = 'reflection';
+            document.getElementById('workspace-container').classList.add('hidden');
+            document.getElementById('reflection-container').classList.remove('hidden');
+            
+            document.getElementById('finalCoherenceDisplay').textContent = `${globalCoherence}%`;
+            document.getElementById('finalRoundsDisplay').textContent = `${currentRound - 1} / ${maxRounds}`;
+        }
+
+        function revealCaseRubric() {
+            const activeCase = appCases[currentCaseIndex];
+            
+            document.getElementById('rubric-struct-list').innerHTML = activeCase.estructuras.map(i => `<li>${i}</li>`).join('');
+            document.getElementById('rubric-func-list').innerHTML = activeCase.funciones.map(i => `<li>${i}</li>`).join('');
+            document.getElementById('rubric-act-list').innerHTML = activeCase.actividades.map(i => `<li>${i}</li>`).join('');
+            document.getElementById('rubric-part-list').innerHTML = activeCase.participacion.map(i => `<li>${i}</li>`).join('');
+
+            document.getElementById('rubricRevealBox').classList.remove('hidden');
+            showToast("Rúbrica de referencia desbloqueada", "info");
+        }
+
+        function submitFinalReflection() {
+            const refText = document.getElementById('reflectionText').value.trim();
+            if (refText.length < 15) {
+                showToast("Por favor redacta una reflexión un poco más extensa (mínimo 15 caracteres) para consolidar tu aprendizaje.", "warning");
+                return;
+            }
+
+            appStage = 'completed';
+            document.getElementById('reflection-container').classList.add('hidden');
+            document.getElementById('report-container').classList.remove('hidden');
+
+            document.getElementById('recordedReflection').textContent = `"${refText}"`;
+
+            const evoBar = document.getElementById('evolutionBar');
+            evoBar.innerHTML = '';
+            
+            sessionHistory.forEach((h, idx) => {
+                const barSegment = document.createElement('div');
+                barSegment.className = "h-full flex items-center justify-center text-[10px] font-bold text-white transition-all cursor-help hover:opacity-90";
+                barSegment.style.width = `${100 / sessionHistory.length}%`;
+                
+                if (h.globalCoherence >= 80) barSegment.classList.add('bg-emerald-600');
+                else if (h.globalCoherence >= 50) barSegment.classList.add('bg-amber-500');
+                else barSegment.classList.add('bg-rose-500');
+                
+                barSegment.textContent = `R${h.round}: ${h.globalCoherence}%`;
+                barSegment.title = `Ronda ${h.round} - Coherencia: ${h.globalCoherence}%`;
+                evoBar.appendChild(barSegment);
+            });
+
+            showToast("¡Sesión finalizada y guardada exitosamente!", "success");
+        }
+
+        function restartSession() {
+            currentRound = 0;
+            sessionHistory = [];
+            globalCoherence = 0;
+            currentSemaforos = { structures: 'gray', functions: 'gray', activities: 'gray', participation: 'gray' };
+            studentMap = { structures: [], functions: [], activities: [], participation: [] };
+            appStage = 'editor';
+
+            updateCoherenceGauge(0);
+            updateRoundIndicator();
+            renderTags('structures');
+            renderTags('functions');
+            renderTags('activities');
+            renderTags('participation');
+            updateSemaphoreStyles('structures', 'gray');
+            updateSemaphoreStyles('functions', 'gray');
+            updateSemaphoreStyles('activities', 'gray');
+            updateSemaphoreStyles('participation', 'gray');
+
+            document.getElementById('feedbackInitialState').classList.remove('hidden');
+            document.getElementById('feedbackResultList').classList.add('hidden');
+            document.getElementById('feedbackLoading').classList.add('hidden');
+            document.getElementById('workspace-container').classList.remove('hidden');
+            document.getElementById('reflection-container').classList.add('hidden');
+            document.getElementById('report-container').classList.add('hidden');
+            document.getElementById('rubricRevealBox').classList.add('hidden');
+            document.getElementById('reflectionText').value = '';
+        }
+
+        // --- 11. REVISIÓN DE CAMBIOS (HISTORIAL TIMELINE MODAL) ---
+        function openHistoryModal() {
+            const container = document.getElementById('historyTimelineContainer');
+            container.innerHTML = '';
+            const activeCase = appCases[currentCaseIndex];
+
+            if (sessionHistory.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10 text-slate-400 italic text-sm">
+                        <svg class="w-10 h-10 mx-auto mb-3 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        No hay revisiones registradas aún. Solicita al menos una retroalimentación para ver tu historial comparativo.
+                    </div>`;
+            } else {
+                // Encabezado comparativo global
+                const firstCoh = sessionHistory[0].globalCoherence;
+                const lastCoh  = sessionHistory[sessionHistory.length - 1].globalCoherence;
+                const delta    = lastCoh - firstCoh;
+                const deltaColor = delta > 0 ? 'text-emerald-600' : delta < 0 ? 'text-rose-600' : 'text-slate-500';
+                const deltaSign  = delta > 0 ? '+' : '';
+
+                container.insertAdjacentHTML('beforeend', `
+                    <div class="bg-slate-900 text-white rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 mb-2">
+                        <div>
+                            <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Resumen de Progresión</p>
+                            <p class="text-xs text-slate-300">${sessionHistory.length} ronda${sessionHistory.length > 1 ? 's' : ''} completada${sessionHistory.length > 1 ? 's' : ''} · Caso: <span class="text-white font-bold">${activeCase.title}</span></p>
+                        </div>
+                        <div class="flex gap-4 text-center">
+                            <div><p class="text-[10px] text-slate-400 uppercase">Inicio</p><p class="text-lg font-black text-white">${firstCoh}%</p></div>
+                            <div><p class="text-[10px] text-slate-400 uppercase">Final</p><p class="text-lg font-black text-white">${lastCoh}%</p></div>
+                            <div><p class="text-[10px] text-slate-400 uppercase">Delta</p><p class="text-lg font-black ${deltaColor}">${deltaSign}${delta}%</p></div>
+                        </div>
+                    </div>`);
+
+                const domainKeys   = ['structures', 'functions', 'activities', 'participation'];
+                const domainLabels = { structures: 'Estructuras', functions: 'Funciones', activities: 'Actividades', participation: 'Participación' };
+                const domainIcons  = {
+                    structures:   'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10',
+                    functions:    'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z',
+                    activities:   'M13 10V3L4 14h7v7l9-11h-7z',
+                    participation:'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0'
+                };
+
+                sessionHistory.forEach((item, index) => {
+                    const prev = index > 0 ? sessionHistory[index - 1] : null;
+                    const cohDelta = prev ? item.globalCoherence - prev.globalCoherence : null;
+                    const cohDeltaStr = cohDelta !== null ? (cohDelta >= 0 ? `<span class="text-emerald-600 font-bold">+${cohDelta}%</span>` : `<span class="text-rose-600 font-bold">${cohDelta}%</span>`) : '';
+                    const cohColor = item.globalCoherence >= 75 ? 'text-emerald-700' : item.globalCoherence >= 45 ? 'text-amber-600' : 'text-rose-600';
+
+                    // Semáforos grid
+                    const semGrid = domainKeys.map(dk => {
+                        const val   = item.semaforos[dk] || 'gris';
+                        const prevVal = prev ? (prev.semaforos[dk] || 'gris') : null;
+                        const color = getTextColorForSem(val);
+                        const dot   = val === 'verde' || val === 'green' ? 'bg-emerald-500' : val === 'amarillo' || val === 'yellow' ? 'bg-amber-400' : val === 'rojo' || val === 'red' ? 'bg-rose-500' : 'bg-slate-300';
+                        let changeArrow = '';
+                        if (prevVal) {
+                            const rank = v => (v === 'verde' || v === 'green') ? 2 : (v === 'amarillo' || v === 'yellow') ? 1 : 0;
+                            const diff = rank(val) - rank(prevVal);
+                            if (diff > 0) changeArrow = `<span class="text-emerald-500 text-[10px]">↑</span>`;
+                            else if (diff < 0) changeArrow = `<span class="text-rose-500 text-[10px]">↓</span>`;
+                            else changeArrow = `<span class="text-slate-400 text-[10px]">→</span>`;
+                        }
+                        return `<div class="p-2 bg-white rounded-lg border border-slate-100 flex flex-col items-center gap-1">
+                            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${domainIcons[dk]}"/></svg>
+                            <span class="text-[9px] font-bold text-slate-500 uppercase">${domainLabels[dk]}</span>
+                            <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full ${dot}"></div>${changeArrow}</div>
+                        </div>`;
+                    }).join('');
+
+                    // Comparación de ítems por dominio (nuevo vs removido vs mantenido)
+                    const domainComparison = domainKeys.map(dk => {
+                        const current  = item.map[dk] || [];
+                        const previous = prev ? (prev.map[dk] || []) : [];
+                        const added    = current.filter(x => !previous.some(p => p.toLowerCase() === x.toLowerCase()));
+                        const removed  = previous.filter(x => !current.some(c => c.toLowerCase() === x.toLowerCase()));
+                        const kept     = current.filter(x =>  previous.some(p => p.toLowerCase() === x.toLowerCase()));
+
+                        const addedHtml   = added.map(t => `<span class="inline-flex items-center gap-0.5 bg-emerald-100 text-emerald-800 border border-emerald-200 px-1.5 py-0.5 rounded text-[10px] font-medium">+${t}</span>`).join('');
+                        const removedHtml = removed.map(t => `<span class="inline-flex items-center gap-0.5 bg-rose-100 text-rose-700 border border-rose-200 px-1.5 py-0.5 rounded text-[10px] font-medium line-through">−${t}</span>`).join('');
+                        const keptHtml    = kept.map(t => `<span class="inline-flex items-center bg-slate-100 text-slate-600 border border-slate-200 px-1.5 py-0.5 rounded text-[10px]">${t}</span>`).join('');
+                        const emptyHtml   = `<span class="text-[10px] text-slate-400 italic">Sin ítems</span>`;
+
+                        return `<div class="space-y-1">
+                            <p class="text-[10px] font-extrabold text-slate-600 uppercase tracking-wider">${domainLabels[dk]}</p>
+                            <div class="flex flex-wrap gap-1">
+                                ${addedHtml || ''}${removedHtml || ''}${keptHtml || ''}${!addedHtml && !removedHtml && !keptHtml ? emptyHtml : ''}
+                            </div>
+                        </div>`;
+                    }).join('');
+
+                    // Resumen diagnóstico de la ronda si existe
+                    const resumenRonda = item.fullResult?.resumen_diagnostico || '';
+                    const resumenHtml = resumenRonda ? `
+                        <div class="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                            <p class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">Diagnóstico de la Ronda</p>
+                            <p class="text-xs text-slate-700 leading-relaxed italic">"${resumenRonda}"</p>
+                        </div>` : '';
+
+                    // Feedback highlights de esa ronda
+                    const fbHighlights = (item.feedback || []).filter(f => f.brecha || f.pregunta_socratica).slice(0, 2);
+                    const fbHtml = fbHighlights.length > 0 ? `
+                        <div class="space-y-2">
+                            <p class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Observaciones Clave Recibidas</p>
+                            ${fbHighlights.map(f => {
+                                const isRed = f.nivel === 'rojo' || f.nivel === 'red';
+                                const bg = isRed ? 'bg-rose-50 border-rose-100 text-rose-800' : 'bg-amber-50 border-amber-100 text-amber-800';
+                                const label = { estructuras: 'Estructuras', funciones: 'Funciones', actividades: 'Actividades', participacion: 'Participación' }[f.dominio] || f.par || '—';
+                                return `<div class="border rounded-lg p-2.5 ${bg} space-y-1">
+                                    <p class="text-[10px] font-bold uppercase tracking-wider opacity-70">${label}</p>
+                                    ${f.brecha ? `<p class="text-xs leading-snug"><span class="font-bold">Brecha:</span> ${f.brecha}</p>` : ''}
+                                    ${f.pregunta_socratica ? `<p class="text-xs leading-snug italic"><span class="font-bold">Pregunta:</span> ${f.pregunta_socratica}</p>` : ''}
+                                </div>`;
+                            }).join('')}
+                        </div>` : '';
+
+                    // Reflexión inter-rondas (qué cambió entre rondas)
+                    let deltaAnalysisHtml = '';
+                    if (prev) {
+                        const improved = domainKeys.filter(dk => {
+                            const rank = v => (v === 'verde' || v === 'green') ? 2 : (v === 'amarillo' || v === 'yellow') ? 1 : 0;
+                            return rank(item.semaforos[dk]) > rank(prev.semaforos[dk]);
+                        }).map(dk => domainLabels[dk]);
+                        const worsened = domainKeys.filter(dk => {
+                            const rank = v => (v === 'verde' || v === 'green') ? 2 : (v === 'amarillo' || v === 'yellow') ? 1 : 0;
+                            return rank(item.semaforos[dk]) < rank(prev.semaforos[dk]);
+                        }).map(dk => domainLabels[dk]);
+                        const addedTotal = domainKeys.reduce((acc, dk) => {
+                            const cur = item.map[dk] || [], prv = prev.map[dk] || [];
+                            return acc + cur.filter(x => !prv.some(p => p.toLowerCase() === x.toLowerCase())).length;
+                        }, 0);
+
+                        deltaAnalysisHtml = `
+                            <div class="bg-blue-50 border border-blue-100 rounded-lg p-3 flex gap-2">
+                                <svg class="w-4 h-4 shrink-0 mt-0.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012-2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                                <div class="text-xs text-blue-900 space-y-0.5">
+                                    <p class="font-extrabold text-[10px] uppercase text-blue-700 tracking-wider mb-1">Cambios respecto a Ronda ${prev.round}</p>
+                                    <p>· Agregaste <strong>${addedTotal}</strong> ítem${addedTotal !== 1 ? 's' : ''} nuevo${addedTotal !== 1 ? 's' : ''} al mapa.</p>
+                                    ${improved.length ? `<p>· Dominios que mejoraron: <strong class="text-emerald-700">${improved.join(', ')}</strong></p>` : ''}
+                                    ${worsened.length ? `<p>· Dominios que bajaron: <strong class="text-rose-700">${worsened.join(', ')}</strong></p>` : ''}
+                                    ${!improved.length && !worsened.length ? `<p class="text-slate-500">· Semáforos sin cambios respecto a la ronda anterior.</p>` : ''}
+                                </div>
+                            </div>`;
+                    }
+
+                    const row = document.createElement('div');
+                    row.className = "border border-slate-200 rounded-xl overflow-hidden";
+                    row.innerHTML = `
+                        <div class="bg-slate-800 text-white px-4 py-3 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="bg-teal-500 text-white font-extrabold text-xs w-7 h-7 rounded-full flex items-center justify-center shrink-0">${item.round}</div>
+                                <div>
+                                    <p class="font-extrabold text-sm">Ronda ${item.round}</p>
+                                    <p class="text-[10px] text-slate-400">${item.map.structures.length + item.map.functions.length + item.map.activities.length + item.map.participation.length} ítems totales en el mapa</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-black text-xl ${cohColor}">${item.globalCoherence}%</p>
+                                <p class="text-[10px] text-slate-400">${cohDeltaStr ? 'Δ ' : ''}${cohDeltaStr || 'ronda inicial'}</p>
+                            </div>
+                        </div>
+                        <div class="p-4 bg-white space-y-4">
+                            <div class="grid grid-cols-4 gap-2">${semGrid}</div>
+                            <div class="border-t border-slate-100 pt-3 space-y-3">
+                                <p class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Ítems por Dominio en esta Ronda</p>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">${domainComparison}</div>
+                            </div>
+                            ${deltaAnalysisHtml}
+                            ${resumenHtml}
+                            ${fbHtml}
+                        </div>`;
+                    container.appendChild(row);
+                });
+            }
+
+            document.getElementById('historyModal').classList.remove('hidden');
+        }
+
+        function getTextColorForSem(val) {
+            if (val === 'verde' || val === 'green') return 'text-emerald-600';
+            if (val === 'amarillo' || val === 'yellow') return 'text-amber-600';
+            if (val === 'rojo' || val === 'red') return 'text-rose-600';
+            return 'text-slate-400';
+        }
+
+        function closeHistoryModal() {
+            document.getElementById('historyModal').classList.add('hidden');
+        }
+
+        // --- 12. DOCENTE: PANEL DE CASOS & MONITOREO ---
+        function loadCaseInTeacherEditor(idx) {
+            const index = parseInt(idx);
+            const targetCase = appCases[index];
+            
+            document.getElementById('editCaseTitle').value = targetCase.title;
+            document.getElementById('editCaseDifficulty').value = targetCase.difficulty;
+            document.getElementById('editCaseText').value = targetCase.text;
+            
+            document.getElementById('editCaseStruct').value = targetCase.estructuras.join('\n');
+            document.getElementById('editCaseFunc').value = targetCase.funciones.join('\n');
+            document.getElementById('editCaseAct').value = targetCase.actividades.join('\n');
+            document.getElementById('editCasePart').value = targetCase.participacion.join('\n');
+            document.getElementById('editCaseLinks').value = targetCase.vinculos.join('\n');
+        }
+
+        function createNewCaseTemplate() {
+            const newCase = {
+                id: `case-${Date.now()}`,
+                title: "Nuevo Caso Clínico Inédito",
+                difficulty: "Principiante",
+                text: "Ingresa el relato clínico detallado del paciente aquí...",
+                estructuras: ["Estructura de prueba"],
+                funciones: ["Función de prueba"],
+                actividades: ["Actividad de prueba"],
+                participacion: ["Participación de prueba"],
+                vinculos: ["Prueba (Función) -> Prueba (Actividad)"]
+            };
+            appCases.push(newCase);
+            saveCasesToStorage();
+            populateCaseSelectors();
+
+            const lastIdx = appCases.length - 1;
+            document.getElementById('teacherCaseSelector').value = lastIdx;
+            loadCaseInTeacherEditor(lastIdx);
+
+            showToast("Plantilla de nuevo caso creada y guardada", "success");
+        }
+
+        function saveCaseFromEditor() {
+            const selector = document.getElementById('teacherCaseSelector');
+            const index = parseInt(selector.value);
+            
+            appCases[index].title = document.getElementById('editCaseTitle').value.trim();
+            appCases[index].difficulty = document.getElementById('editCaseDifficulty').value;
+            appCases[index].text = document.getElementById('editCaseText').value.trim();
+            
+            appCases[index].estructuras = document.getElementById('editCaseStruct').value.split('\n').map(s => s.trim()).filter(s => s);
+            appCases[index].funciones = document.getElementById('editCaseFunc').value.split('\n').map(s => s.trim()).filter(s => s);
+            appCases[index].actividades = document.getElementById('editCaseAct').value.split('\n').map(s => s.trim()).filter(s => s);
+            appCases[index].participacion = document.getElementById('editCasePart').value.split('\n').map(s => s.trim()).filter(s => s);
+            appCases[index].vinculos = document.getElementById('editCaseLinks').value.split('\n').map(s => s.trim()).filter(s => s);
+
+            populateCaseSelectors();
+            document.getElementById('caseSelector').value = index;
+            loadCase(index);
+            saveCasesToStorage();
+            showToast("Caso Clínico y Rúbricas guardados exitosamente", "success");
+        }
+
+        function restoreDefaultCases() {
+            appCases = [...DEFAULT_CASES];
+            localStorage.removeItem(STORAGE_KEY);
+            populateCaseSelectors();
+            loadCase(0);
+            loadCaseInTeacherEditor(0);
+            showToast("Casos reestablecidos de fábrica", "info");
+        }
+
+        // --- 13. AUXILIARES ---
+        function toggleKeyVisibility() {
+            const input = document.getElementById('geminiApiKey');
+            const eye = document.getElementById('eyeIcon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                eye.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>`;
+            } else {
+                input.type = 'password';
+                eye.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>`;
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            let bg = 'bg-slate-800';
+            if (type === 'success') bg = 'bg-emerald-600';
+            if (type === 'warning') bg = 'bg-amber-500';
+            if (type === 'error') bg = 'bg-rose-600';
+
+            toast.className = `${bg} text-white text-xs font-bold px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 pointer-events-auto transition-all transform translate-y-2 opacity-0 duration-300`;
+            toast.innerHTML = `<span>${message}</span>`;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        // --- 14. GENERADOR DE CASO CON IA ---
+        function openGenerateCaseModal() {
+            const provider = document.getElementById('apiProvider').value;
+            const apiKey = document.getElementById('geminiApiKey').value.trim();
+            const warning = document.getElementById('generateModalApiWarning');
+            const btn = document.getElementById('generateCaseBtn');
+
+            if (provider === 'simulated' || !apiKey) {
+                warning.classList.remove('hidden');
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                warning.classList.add('hidden');
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+
+            document.getElementById('generateCaseTopic').value = '';
+            document.getElementById('generateCaseDifficulty').value = 'Intermedio';
+            document.getElementById('generateCaseLoading').classList.add('hidden');
+            document.getElementById('generateCaseModal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('generateCaseTopic').focus(), 100);
+        }
+
+        function closeGenerateCaseModal() {
+            document.getElementById('generateCaseModal').classList.add('hidden');
+        }
+
+        async function generateCaseWithAI() {
+            const provider = document.getElementById('apiProvider').value;
+            const apiKey = document.getElementById('geminiApiKey').value.trim();
+            const topic = document.getElementById('generateCaseTopic').value.trim();
+            const difficulty = document.getElementById('generateCaseDifficulty').value;
+
+            if (provider === 'simulated' || !apiKey) {
+                showToast("Configura un proveedor de API con clave antes de generar.", "error");
+                return;
+            }
+
+            const loadingEl = document.getElementById('generateCaseLoading');
+            const btn = document.getElementById('generateCaseBtn');
+            const cancelBtn = document.getElementById('generateCaseCancelBtn');
+
+            loadingEl.classList.remove('hidden');
+            btn.disabled = true;
+            cancelBtn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            const topicLine = topic
+                ? `La patología o tema central debe ser: "${topic}".`
+                : `Elige libremente una patología kinesiológica variada y realista, diferente a artrosis de rodilla y ACV.`;
+
+            const generationPrompt = `Eres un docente experto en Kinesiología y en la Clasificación Internacional del Funcionamiento (CIF) de la OMS.
+Genera un caso clínico COMPLETO y detallado de nivel "${difficulty}" para que estudiantes de kinesiología construyan un Mapa CIF.
+${topicLine}
+
+REQUISITOS DEL CASO:
+- El texto del caso debe tener al menos 200 palabras, describiendo al paciente (edad, sexo, ocupación, contexto social), motivo de consulta, anamnesis detallada y hallazgos del examen físico kinésico.
+- Incluir datos cuantitativos (escalas, grados de fuerza, rangos articulares, tiempos, distancias).
+- El caso debe reflejar CLARAMENTE los 4 dominios CIF: estructuras corporales alteradas, funciones fisiológicas afectadas, limitaciones en actividades, y restricciones en participación social/laboral.
+
+RETORNA ÚNICAMENTE el siguiente objeto JSON, sin texto extra ni bloques de código Markdown:
+{
+  "title": "Caso 0X: [Nombre corto de la patología]",
+  "difficulty": "${difficulty}",
+  "text": "[Texto clínico completo, mínimo 200 palabras, con saltos de línea \\n donde corresponda]",
+  "estructuras": ["[Estructura 1]", "[Estructura 2]", "[Estructura 3]"],
+  "funciones": ["[Función 1]", "[Función 2]", "[Función 3]", "[Función 4]"],
+  "actividades": ["[Actividad limitada 1]", "[Actividad limitada 2]", "[Actividad limitada 3]"],
+  "participacion": ["[Restricción social/laboral 1]", "[Restricción 2]", "[Restricción 3]"],
+  "vinculos": [
+    "[Elemento Función] -> [Elemento Actividad] : [Justificación breve]",
+    "[Elemento Actividad] -> [Elemento Participación] : [Justificación breve]",
+    "[Elemento Estructura] -> [Elemento Función] : [Justificación breve]"
+  ]
+}`;
+
+            try {
+                let rawText;
+
+                if (provider === 'gemini') {
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+                    const res = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: generationPrompt }] }],
+                            generationConfig: { responseMimeType: "application/json" }
+                        })
+                    });
+                    if (!res.ok) { const e = await res.text(); throw new Error(`Gemini ${res.status}: ${e}`); }
+                    const data = await res.json();
+                    rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                } else {
+                    const model = document.getElementById('openrouterModel').value;
+                    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${apiKey}`,
+                            'HTTP-Referer': window.location.href,
+                            'X-Title': 'Constructor de Mapa CIF - UOH'
+                        },
+                        body: JSON.stringify({
+                            model: model,
+                            messages: [{ role: "user", content: generationPrompt }]
+                        })
+                    });
+                    if (!res.ok) { const e = await res.text(); throw new Error(`OpenRouter ${res.status}: ${e}`); }
+                    const data = await res.json();
+                    rawText = data.choices?.[0]?.message?.content;
+                }
+
+                if (!rawText) throw new Error("La IA devolvió una respuesta vacía.");
+
+                const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+                if (!jsonMatch) throw new Error("No se encontró JSON válido en la respuesta.");
+                const generated = JSON.parse(jsonMatch[0]);
+
+                // Crear nuevo caso en la lista
+                const newCase = {
+                    id: `case-ai-${Date.now()}`,
+                    title: generated.title || "Caso generado por IA",
+                    difficulty: generated.difficulty || difficulty,
+                    text: generated.text || "",
+                    estructuras: Array.isArray(generated.estructuras) ? generated.estructuras : [],
+                    funciones: Array.isArray(generated.funciones) ? generated.funciones : [],
+                    actividades: Array.isArray(generated.actividades) ? generated.actividades : [],
+                    participacion: Array.isArray(generated.participacion) ? generated.participacion : [],
+                    vinculos: Array.isArray(generated.vinculos) ? generated.vinculos : []
+                };
+                appCases.push(newCase);
+                saveCasesToStorage();
+                populateCaseSelectors();
+
+                const newIdx = appCases.length - 1;
+                document.getElementById('teacherCaseSelector').value = newIdx;
+                loadCaseInTeacherEditor(newIdx);
+
+                closeGenerateCaseModal();
+                showToast(`Caso "${newCase.title}" generado y guardado.`, "success");
+
+            } catch (err) {
+                console.error(err);
+                showToast(`Error al generar: ${err.message}`, "error");
+            } finally {
+                loadingEl.classList.add('hidden');
+                btn.disabled = false;
+                cancelBtn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+    </script>
+</body>
+</html>
