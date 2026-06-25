@@ -1,0 +1,20 @@
+# recursos-kin
+
+> Recursos educativos interactivos en HTML para la enseñanza de Kinesiología, Chile.
+
+Colección de herramientas web interactivas (HTML/JS autocontenido, sin backend) pensadas para apoyar la docencia y el aprendizaje en Kinesiología. Incluye calculadoras clínicas, simuladores fisiológicos, dashboards y entrenadores de razonamiento clínico, orientados a estudiantes y docentes de ciencias de la salud. Idioma: español. Licencia: MIT.
+
+## Recursos
+
+- [Página principal](index.html): Índice de navegación hacia todos los recursos del repositorio.
+- [Calculadora 1RM (Brzycki)](Calculadora_de_1rm_brzycki_v6.html): Calculadora interactiva de una repetición máxima (1RM) mediante la fórmula de Brzycki, para prescripción de ejercicio de fuerza.
+- [Laboratorio de Gasto Cardíaco](laboratorio_gasto_cardiaco_v2.html): Simulación interactiva del gasto cardíaco y sus determinantes fisiológicos (frecuencia cardíaca, volumen sistólico).
+- [Dashboard Respiratorio](dashboard_respiratorio.html): Panel interactivo para visualizar variables y mecánica de la fisiología respiratoria.
+- [Entrenador de Objetivos Terapéuticos](entrenador_de_objetivos_terapeuticos_v5.html): Herramienta de práctica para la formulación de objetivos terapéuticos en kinesiología.
+- [CIF Kine](CIF%20Kine.html): Recurso interactivo sobre la Clasificación Internacional del Funcionamiento, la Discapacidad y la Salud (CIF/ICF) aplicada a la práctica kinésica.
+
+## Notes
+
+- Todos los recursos son archivos HTML autocontenidos, sin dependencias de servidor, pensados para uso directo en el navegador o despliegue vía GitHub Pages.
+- Repositorio público, mantenido por la Escuela de Salud (Kinesiología) de la Universidad de O'Higgins.
+- Repositorio: https://github.com/kineluis/recursos-kin
