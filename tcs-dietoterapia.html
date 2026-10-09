@@ -1,0 +1,591 @@
+<title>TCS de Dietoterapia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;1,400&family=Montserrat:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: barra institucional + mapa lateral (desplegable bajo 1100 px) + una ventana guiada a la vez. Sistema "Academic Excellence", tema claro único. */
+:root{
+  --bg:#fbf9fa; --ink:#000000; --navy:#0f1c2c; --on-navy:#ffffff;
+  --text:#1b1b1d; --muted:#44474c; --line:#74777d; --line2:#c4c6cc;
+  --s0:#ffffff; --s1:#f5f3f4; --s2:#f0edee; --s3:#eae7e9; --s4:#e4e2e3;
+  --thead:#dce2f3; --gold:#cca730; --on-gold:#4f3e00;
+  --alert-bg:#ffdad6; --alert:#93000a; --scrim:rgba(15,28,44,.45);
+  --f-ui:'Montserrat',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+  --f-text:'Lora',Georgia,'Times New Roman',serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--f-text);font-size:17px;line-height:1.6;margin:0}
+button{font-family:var(--f-ui);touch-action:manipulation;color:inherit}
+h1,h2,h3{font-family:var(--f-ui);font-weight:600;color:var(--text);text-wrap:balance;margin:0}
+h1{font-size:clamp(26px,4.2vw,34px);letter-spacing:-.02em;line-height:1.2}
+h2{font-size:19px;border-bottom:2px solid var(--ink);padding-bottom:6px;margin-top:8px}
+p{margin:0}
+.ui{font-family:var(--f-ui)}
+.em{font-family:var(--f-ui);font-weight:600;font-size:.94em}
+u{text-decoration-thickness:1px;text-underline-offset:3px}
+:focus-visible{outline:3px solid var(--navy);outline-offset:2px}
+
+.inst{background:var(--s4);border-bottom:2px solid var(--ink);font-family:var(--f-ui);font-size:13px;font-weight:600;letter-spacing:.03em;padding:10px 16px;display:flex;justify-content:space-between;gap:4px 16px;flex-wrap:wrap}
+.inst span:last-child{font-weight:500;color:var(--muted)}
+
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--s0);border-bottom:1px solid var(--line2);display:flex;align-items:center;gap:12px;padding:8px 16px;font-family:var(--f-ui)}
+.topbar .ttl{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;font-size:14px}
+.topbar .prog{font-size:13px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
+
+.shell{max-width:1240px;margin:0 auto;padding-inline:16px;padding-block:20px 32px;display:grid;grid-template-columns:minmax(0,1fr);gap:24px}
+main{min-width:0}
+
+.map{background:var(--s1);border:1px solid var(--line2);padding:16px;font-family:var(--f-ui);display:flex;flex-direction:column;gap:16px}
+.map h3{font-size:12px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;border-bottom:2px solid var(--ink);padding-bottom:6px}
+.map .mhead{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.map .mhead h3{border:0;padding:0;font-size:14px;letter-spacing:.04em}
+.mlist{display:flex;flex-direction:column;gap:4px}
+.mlink{text-align:left;background:transparent;border:1px solid transparent;padding:8px 10px;font-size:14px;font-weight:500;cursor:pointer;min-height:40px}
+.mlink:hover{background:var(--s3)}
+.mlink[aria-current="true"]{background:var(--s0);border-color:var(--ink);font-weight:700}
+.sq{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.sq button{aspect-ratio:1;max-width:100%;min-height:40px;border:1px solid var(--line);background:var(--s0);font-weight:700;font-size:14px;cursor:pointer;font-variant-numeric:tabular-nums}
+.sq button.full{background:var(--ink);color:var(--s0);border-color:var(--ink)}
+.sq button.part{background:var(--thead)}
+.sq button.zero{background:var(--s4);color:var(--muted);text-decoration:line-through}
+.sq button[aria-current="true"]{outline:3px solid var(--navy);outline-offset:2px}
+.legend-sq{display:grid;gap:6px;font-size:12px;color:var(--muted)}
+.legend-sq span{display:flex;align-items:center;gap:8px}
+.legend-sq i{width:14px;height:14px;border:1px solid var(--line);display:inline-block;flex:none}
+.closebtn{display:none}
+
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:30}
+
+.window{background:var(--s0);border:1px solid var(--line2);scroll-margin-top:72px}
+.wtitle{background:var(--s3);border-bottom:2px solid var(--ink);padding:10px 20px;font-family:var(--f-ui);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.wtitle span:last-child{color:var(--muted);font-weight:600}
+.wbody{padding:28px 32px;display:flex;flex-direction:column;gap:20px;min-width:0}
+.wbody > *{min-width:0}
+.lede{font-size:18px;color:var(--muted);max-width:65ch}
+.prose{display:flex;flex-direction:column;gap:12px;max-width:68ch}
+.wnav{border-top:1px solid var(--line2);padding:14px 20px;display:flex;justify-content:space-between;gap:12px;background:var(--s0)}
+.foot{background:var(--s3);border:1px solid var(--line2);border-top:0;padding:8px 20px;font-family:var(--f-ui);font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+
+.btn{min-height:40px;padding:8px 18px;border:1px solid var(--ink);background:var(--ink);color:var(--s0);font-weight:600;font-size:14px;cursor:pointer;line-height:1.3}
+.btn.sec{background:transparent;color:var(--ink)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn .sm{display:none}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+.card{background:var(--s1);border:1px solid var(--line2);padding:16px 18px;display:flex;flex-direction:column;gap:8px}
+.card h3{font-size:12px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;border-bottom:2px solid var(--ink);padding-bottom:6px}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-family:var(--f-ui);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;border:1px solid var(--line2);background:var(--s2);padding:4px 8px}
+.tag.alert{background:var(--alert-bg);color:var(--alert);border-color:var(--alert)}
+
+.block{border:1px solid var(--line2);padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.block .lbl{font-family:var(--f-ui);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.block.ctx{background:var(--s1)}
+.block.find{background:var(--s2);border-color:var(--line)}
+.question{font-family:var(--f-ui);font-weight:600;font-size:17px}
+
+.scale{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.opt{min-height:72px;border:1px solid var(--line);background:var(--s0);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:8px 6px;text-align:center}
+.opt b{font-size:20px;font-variant-numeric:tabular-nums}
+.opt span{font-size:12px;font-weight:500;line-height:1.25}
+.opt:hover:not(:disabled){background:var(--s2)}
+.opt[aria-checked="true"]{background:var(--navy);color:var(--on-navy);border-color:var(--navy)}
+.opt:disabled{cursor:default}
+.opt:disabled:not([aria-checked="true"]){opacity:.55}
+
+.fb{display:flex;flex-direction:column;gap:16px;border-top:2px solid var(--ink);padding-top:18px}
+.fbhead{display:flex;gap:16px;align-items:stretch;flex-wrap:wrap}
+.kpi{background:var(--s2);border:1px solid var(--line2);padding:12px 16px;display:flex;flex-direction:column;gap:2px;font-family:var(--f-ui);min-width:0}
+.kpi small{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.kpi b{font-size:32px;font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums}
+.fbhead p{flex:1 1 240px;align-self:center;font-size:18px}
+.src{font-family:var(--f-ui);font-size:13px;color:var(--muted)}
+
+.fig{margin:0;background:var(--s0);border:1px solid var(--line2);padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.fig svg{display:block;width:100%;height:auto}
+.fig figcaption{font-family:var(--f-ui);font-size:13px;color:var(--muted)}
+.fig figcaption b{color:var(--text)}
+
+.tbl-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{border:1px solid var(--line2);padding:8px 10px;text-align:left;vertical-align:top}
+thead th{background:var(--thead);font-family:var(--f-ui);font-size:13px;font-weight:600}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--f-ui)}
+tbody tr:nth-child(even) td{background:var(--s1)}
+.linkbtn{background:transparent;border:1px solid var(--ink);padding:4px 10px;min-height:36px;font-weight:600;font-size:13px;cursor:pointer}
+
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.steps{display:flex;flex-direction:column;gap:10px}
+.step{border:1px solid var(--line2);padding:12px 14px;background:var(--s1)}
+.step .lbl{font-family:var(--f-ui);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.confirmbox{border:2px solid var(--ink);padding:14px 16px;background:var(--s1);display:flex;flex-direction:column;gap:10px}
+dl.glos{display:grid;grid-template-columns:minmax(0,220px) minmax(0,1fr);border-top:1px solid var(--line2);margin:0}
+dl.glos dt,dl.glos dd{border-bottom:1px solid var(--line2);padding:10px 8px;margin:0}
+dl.glos dt{font-family:var(--f-ui);font-weight:600;font-size:15px}
+.note{font-family:var(--f-ui);font-size:13px;color:var(--muted);border-left:0;background:var(--s2);border:1px solid var(--line2);padding:10px 12px}
+
+@media (min-width:600px){.shell{padding-inline:24px}}
+@media (min-width:1100px){
+  .shell{grid-template-columns:270px minmax(0,1fr);padding-inline:32px;gap:32px}
+  .topbar{display:none}
+  .map{position:sticky;top:16px;align-self:start;max-height:calc(100vh - 32px);overflow:auto}
+  .scrim{display:none}
+}
+@media (max-width:1099.98px){
+  .map{position:fixed;top:0;bottom:0;left:0;width:min(320px,86vw);z-index:40;overflow:auto;transform:translateX(-105%);transition:transform .22s ease;padding-top:calc(16px + env(safe-area-inset-top,0px));padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));border:0;border-right:2px solid var(--ink)}
+  .map.open{transform:none}
+  .closebtn{display:inline-flex}
+}
+@media (max-width:599.98px){
+  body{font-size:16px}
+  .wbody{padding:20px 16px}
+  .wtitle{padding:10px 16px}
+  .shell{padding-bottom:96px}
+  .wnav{position:fixed;left:0;right:0;bottom:0;z-index:15;border-top:2px solid var(--ink);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px))}
+  .wnav .btn{flex:1}
+  .btn .lg{display:none}.btn .sm{display:inline}
+  .scale{grid-template-columns:minmax(0,1fr)}
+  .opt{flex-direction:row;justify-content:flex-start;min-height:52px;gap:14px;padding:8px 14px;text-align:left}
+  .opt b{min-width:32px;text-align:center}
+  .kpis{grid-template-columns:minmax(0,1fr)}
+  .stack thead{display:none}
+  .stack tr{display:block;border:1px solid var(--line2);margin-bottom:10px}
+  .stack td{display:flex;justify-content:space-between;gap:12px;border:0;border-bottom:1px solid var(--line2);background:var(--s0)!important;text-align:right}
+  .stack td::before{content:attr(data-label);font-family:var(--f-ui);font-weight:600;font-size:13px;text-align:left;color:var(--muted)}
+  .stack td:last-child{border-bottom:0}
+  dl.glos{grid-template-columns:minmax(0,1fr)}
+  dl.glos dt{border-bottom:0;padding-bottom:0}
+}
+@media (min-width:600px) and (max-width:899.98px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (pointer:coarse){
+  .btn,.opt,.mlink,.linkbtn{min-height:44px}
+  .sq button{min-height:44px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+
+<div class="inst"><span>Universidad de O'Higgins · Escuela de Salud</span><span>Nutrición y Dietética · Tercer año</span></div>
+
+<div class="topbar" id="topbar">
+  <button class="btn sec" id="openMap" aria-controls="map" aria-expanded="false">Mapa</button>
+  <span class="ttl" id="topTitle"></span>
+  <span class="prog" id="topProg"></span>
+</div>
+
+<div class="shell">
+  <aside class="map" id="map" aria-label="Mapa de la actividad">
+    <div class="mhead"><h3>Test de Concordancia Script</h3><button class="btn sec closebtn" id="closeMap">Cerrar</button></div>
+    <div><h3>Guías</h3><div class="mlist" id="mapGuides"></div></div>
+    <div><h3>Actividades</h3><div class="sq" id="mapActs" style="margin-top:10px"></div></div>
+    <div class="legend-sq">
+      <span><i style="background:var(--ink);border-color:var(--ink)"></i>Coincide con la moda</span>
+      <span><i style="background:var(--thead)"></i>Puntaje parcial</span>
+      <span><i style="background:var(--s4)"></i>0 puntos</span>
+      <span><i style="background:var(--s0)"></i>Sin responder</span>
+    </div>
+    <div><h3>Cierre</h3><div class="mlist" id="mapEnd"></div></div>
+  </aside>
+  <div class="scrim" id="scrim" hidden></div>
+
+  <main>
+    <section class="window" id="win" aria-live="polite">
+      <div class="wtitle"><span id="wTitle"></span><span id="wSub"></span></div>
+      <div class="wbody" id="wBody"></div>
+      <div class="wnav">
+        <button class="btn sec" id="prev"><span class="lg">Anterior</span><span class="sm">Anterior</span></button>
+        <button class="btn" id="next"><span class="lg" id="nextLg">Siguiente</span><span class="sm" id="nextSm">Siguiente</span></button>
+      </div>
+    </section>
+    <div class="foot"><span id="footL"></span><span>Distribuciones del panel: referencia de práctica</span></div>
+  </main>
+</div>
+
+<script>
+const CASES={
+  1:{tema:'Diabetes tipo 2',corto:'DM2',ctx:'Mujer de 52 años en control en el Programa de Salud Cardiovascular de un CESFAM, con DM2 diagnosticada hace 2 años. Peso 82 kg, talla 1,58 m (IMC 32,8). Su última HbA1c es 8,4% y el médico la deriva a nutricionista para educación alimentaria.'},
+  2:{tema:'Hipertensión arterial',corto:'HTA',ctx:'Hombre de 45 años, conductor de camión, con diagnóstico reciente de hipertensión arterial (PA 148/94 mmHg). Peso 86 kg, talla 1,75 m (IMC 28,1). Está en tratamiento farmacológico y el médico lo deriva a nutricionista para recibir indicaciones alimentarias.'},
+  3:{tema:'Enfermedad celíaca',corto:'Celiaquía',ctx:'Mujer de 24 años, estudiante universitaria, con enfermedad celíaca confirmada hace 4 meses. Refiere que sigue una dieta sin gluten, pero mantiene distensión abdominal y deposiciones blandas. Peso 52 kg, talla 1,62 m (IMC 19,8).'},
+  4:{tema:'Reflujo gastroesofágico',corto:'ERGE',ctx:'Hombre de 38 años, oficinista, consulta por pirosis después de las comidas desde hace 3 meses. El gastroenterólogo descartó complicaciones y lo deriva a nutricionista. Peso 88 kg, talla 1,74 m (IMC 29,1).'}
+};
+const ITEMS=[
+ {caso:1,tipo:'hip',tema:'Azúcares simples',
+  con:'Si estuvieras considerando que su descompensación se relaciona principalmente con un alto consumo de azúcares simples',
+  hal:'El recordatorio de 24 horas muestra 4 tazas de té con 3 cucharaditas de azúcar cada una y 1 litro de bebida azucarada al día.',
+  dist:[0,0,0,3,7],
+  rep:'Efecto de los azúcares simples y las bebidas azucaradas sobre la glicemia; lectura del recordatorio de 24 horas.',
+  exp:'Doce cucharaditas de azúcar en el té más un litro de bebida azucarada suman una carga diaria de azúcares simples muy alta. Ese patrón explica bien una HbA1c de 8,4%, por eso la hipótesis se fortalece con claridad. Algunos expertos marcan +1 porque falta conocer el resto de la dieta y la adherencia al fármaco.',
+  clave:'Un recordatorio de 24 horas con azúcar y bebidas abundantes es evidencia directa de una carga glicémica alta.',
+  src:'Asociación Americana de Diabetes (ADA), Standards of Care in Diabetes: terapia nutricional.'},
+ {caso:1,tipo:'int',tema:'Hipoglicemia',seg:true,
+  con:'Si estuvieras considerando indicar que omita la colación nocturna para reducir su aporte calórico',
+  hal:'Usa insulina NPH en la noche y refiere sudoración y temblor de madrugada, con una glicemia capilar de 62 mg/dL.',
+  dist:[7,3,0,0,0],
+  rep:'Hipoglicemia en personas con insulina; rol de la colación nocturna con insulina NPH.',
+  exp:'La insulina NPH nocturna tiene su efecto máximo durante la madrugada, y la paciente ya presenta síntomas con una glicemia de 62 mg/dL. Quitar la colación aumentaría el riesgo de hipoglicemia. La reducción calórica debe buscarse en otros tiempos de comida, coordinando con el médico.',
+  clave:'Con insulina NPH nocturna e hipoglicemia de madrugada, la colación nocturna se mantiene.',
+  src:'ADA, Standards of Care in Diabetes: prevención de hipoglicemia.'},
+ {caso:1,tipo:'eva',tema:'Antropometría',
+  con:'Si estuvieras considerando medir la circunferencia de cintura para estimar su riesgo cardiovascular',
+  hal:'Su presión arterial en la consulta es 128/82 mmHg.',
+  dist:[0,2,6,2,0],
+  rep:'Indicadores antropométricos de riesgo cardiometabólico.',
+  exp:'La circunferencia de cintura estima la grasa abdominal y aporta información que la presión arterial no reemplaza. Una presión dentro de rangos aceptables no hace más ni menos útil la medición. El error típico es pensar que, con la presión normal, ya no vale la pena medir la cintura.',
+  clave:'Un dato normal en otro parámetro no cambia la utilidad de una medición que evalúa algo distinto.',
+  src:'OMS: circunferencia de cintura y riesgo cardiometabólico.'},
+ {caso:2,tipo:'hip',tema:'Sodio',
+  con:'Si estuvieras considerando que su consumo de sodio es elevado',
+  hal:'Refiere que en la ruta come sándwiches con embutidos, usa sopas en sobre y agrega sal a la comida antes de probarla.',
+  dist:[0,0,0,2,8],
+  rep:'Fuentes alimentarias de sodio: alimentos procesados y sal agregada.',
+  exp:'Los embutidos y las sopas en sobre están entre los alimentos con más sodio, y salar antes de probar es un hábito de alto aporte. Tres fuentes independientes de sodio hacen muy probable un consumo sobre la recomendación.',
+  clave:'Procesados más sal agregada en la mesa: consumo de sodio elevado muy probable.',
+  src:'OMS: consumo de sodio menor a 2 g al día en adultos.'},
+ {caso:2,tipo:'int',tema:'Patrón DASH',
+  con:'Si estuvieras considerando indicar un patrón de alimentación tipo DASH',
+  hal:'Consume 1 porción de frutas y verduras al día y casi no consume lácteos.',
+  dist:[0,0,2,5,3],
+  rep:'Componentes del patrón DASH.',
+  exp:'DASH ya era pertinente por la hipertensión. El hallazgo muestra que justamente le faltan frutas, verduras y lácteos, que son la base del patrón, así que la indicación gana pertinencia. Algunos expertos marcan 0 porque la indicación ya estaba clara antes del dato.',
+  clave:'Si el hallazgo muestra que faltan los alimentos base de la intervención, esta se vuelve más pertinente.',
+  src:'Appel LJ et al. Ensayo DASH. N Engl J Med. 1997.'},
+ {caso:2,tipo:'int',tema:'Potasio',seg:true,
+  con:'Si estuvieras considerando recomendar un sustituto de sal a base de cloruro de potasio',
+  hal:'Su tratamiento incluye enalapril y espironolactona.',
+  dist:[8,2,0,0,0],
+  rep:'Sustitutos de sal y fármacos que retienen potasio.',
+  exp:'El enalapril (IECA) y la espironolactona disminuyen la excreción renal de potasio. Sumar un sustituto de sal con cloruro de potasio aumenta el riesgo de hiperkalemia, que puede causar arritmias. Antes de recomendarlo hay que revisar los fármacos y coordinar con el médico.',
+  clave:'Sustituto con potasio más fármacos que retienen potasio: riesgo de hiperkalemia.',
+  src:'Riesgo de hiperkalemia con sustitutos de sal en usuarios de IECA y antagonistas de la aldosterona.'},
+ {caso:3,tipo:'hip',tema:'Contaminación cruzada',
+  con:'Si estuvieras considerando que sus síntomas persisten por ingesta inadvertida de gluten',
+  hal:'Desayuna todos los días avena comprada a granel, sin sello “sin gluten”.',
+  dist:[0,0,1,5,4],
+  rep:'Contaminación cruzada en la dieta sin gluten.',
+  exp:'La avena a granel suele contaminarse con trigo, cebada o centeno durante el cultivo y el procesamiento. Consumida a diario, es una fuente probable de gluten inadvertido. No es la única explicación posible, por eso el panel se reparte entre +1 y +2.',
+  clave:'En celiaquía, la avena debe ser certificada sin gluten.',
+  src:'Recomendaciones de dieta sin gluten: avena certificada sin gluten.'},
+ {caso:3,tipo:'int',tema:'Micronutrientes',
+  con:'Si estuvieras considerando indicar suplementación de hierro',
+  hal:'Sus exámenes muestran hemoglobina 13,2 g/dL y ferritina 45 ng/mL.',
+  dist:[3,5,2,0,0],
+  rep:'Indicaciones de suplementación de hierro; valores normales de hemoglobina y ferritina.',
+  exp:'La celiaquía puede causar déficit de hierro, pero esta paciente tiene hemoglobina y ferritina normales. Sin anemia ni depósitos bajos, suplementar pierde justificación. Corresponde vigilar en controles y asegurar fuentes de hierro en la dieta sin gluten.',
+  clave:'Hemoglobina y ferritina normales no justifican suplementar hierro.',
+  src:'Criterios de anemia (OMS) y lectura de ferritina sérica.'},
+ {caso:4,tipo:'hip',tema:'Horario de comidas',
+  con:'Si estuvieras considerando que una cena tardía contribuye a su pirosis',
+  hal:'Cena a las 19:00 y se acuesta alrededor de las 23:30.',
+  dist:[2,5,3,0,0],
+  rep:'Medidas de estilo de vida en ERGE: horario de la última comida.',
+  exp:'Se recomienda no comer en las 2 a 3 horas previas a acostarse. Entre la cena y la hora de dormir pasan más de 4 horas, así que la cena tardía pierde fuerza como explicación. Conviene buscar otros factores, como el volumen de las comidas o los alimentos gatillantes.',
+  clave:'Más de 3 horas entre la cena y acostarse descarta la cena tardía como factor principal.',
+  src:'Colegio Americano de Gastroenterología (ACG), guía de ERGE 2022.'},
+ {caso:4,tipo:'int',tema:'Peso corporal',
+  con:'Si estuvieras considerando recomendar una baja de peso gradual',
+  hal:'Refiere que la pirosis empeora con frituras y chocolate.',
+  dist:[0,1,6,3,0],
+  rep:'Medidas de estilo de vida en ERGE: baja de peso y alimentos gatillantes.',
+  exp:'La baja de peso es pertinente por el IMC de 29,1, que se asocia a más reflujo. Saber que las frituras y el chocolate gatillan síntomas orienta otra indicación (evitarlos), pero no cambia la pertinencia de bajar de peso. Algunos expertos marcan +1 porque reducir frituras también ayuda a bajar de peso.',
+  clave:'Un hallazgo que orienta otra indicación no cambia necesariamente la que estabas considerando.',
+  src:'ACG, guía de ERGE 2022.'}
+];
+const TIPOS={hip:'Hipótesis',eva:'Evaluación',int:'Intervención'};
+const LAB_HIP=['Muy improbable','Menos probable','Neutral','Más probable','Muy probable'];
+const LAB_PER=['Mucho menos pertinente','Menos pertinente','Sin cambio','Más pertinente','Mucho más pertinente'];
+const QHIP='Esta hipótesis se vuelve:';
+const QPER={int:'La pertinencia de esta intervención se vuelve:',eva:'La pertinencia de esta evaluación se vuelve:'};
+const VALS=[-2,-1,0,1,2];
+const sign=v=>v>0?'+'+v:(v<0?'−'+Math.abs(v):'0');
+const fmt=x=>(Math.round(x*100)/100).toString().replace('.',',');
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const modeIdx=d=>d.indexOf(Math.max(...d));
+const score=(it,v)=>it.dist[v+2]/Math.max(...it.dist);
+
+const W=[
+ {k:'g',n:1,t:'¿Qué es un TCS?'},{k:'g',n:2,t:'Cómo se lee un ítem'},{k:'g',n:3,t:'Cómo se puntúa'},{k:'g',n:4,t:'Cómo razonar un ítem'}
+];
+ITEMS.forEach((it,i)=>W.push({k:'a',i,t:'Actividad '+(i+1)}));
+W.push({k:'r',t:'Resultados'},{k:'l',t:'Glosario'});
+
+const KEY='tcs-dietoterapia-uoh-v1';
+let st={cur:0,ans:{}};
+try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&typeof s==='object'){st.cur=Math.min(Math.max(+s.cur||0,0),W.length-1);st.ans=s.ans&&typeof s.ans==='object'?s.ans:{};}}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}}
+let pending=null,hintOpen=false,resetAsk=false,reveal=0;
+
+const $=id=>document.getElementById(id);
+const answered=()=>Object.keys(st.ans).length;
+
+/* ---------- Gráficos SVG ---------- */
+const FONT="font-family:Montserrat,system-ui,Arial,sans-serif";
+function distSVG(dist,chosen,narrow){
+  const Wd=narrow?320:560,H=narrow?262:262,L=narrow?28:40,R=narrow?8:16,T=56,B=62;
+  const pw=Wd-L-R,ph=H-T-B,band=pw/5,bw=band*(narrow?.6:.5),m=modeIdx(dist),mx=Math.max(...dist);
+  const fs=narrow?12:13;
+  let s=`<svg viewBox="0 0 ${Wd} ${H}" role="img" aria-label="Distribución del panel" style="${FONT}">`;
+  // leyenda
+  s+=`<rect x="${L}" y="10" width="12" height="12" fill="var(--gold)"/><text x="${L+18}" y="20" font-size="${fs}" fill="var(--text)">Moda del panel</text>`;
+  if(chosen!==null&&chosen!==undefined){const lx=L+(narrow?128:150);s+=`<rect x="${lx}" y="10" width="12" height="12" fill="none" stroke="var(--ink)" stroke-width="2"/><text x="${lx+18}" y="20" font-size="${fs}" fill="var(--text)">Tu respuesta</text>`;}
+  [0,5,10].forEach(v=>{const y=T+ph-v/10*ph;s+=`<line x1="${L}" x2="${Wd-R}" y1="${y}" y2="${y}" stroke="var(--line2)" stroke-width="1"/><text x="${L-6}" y="${y+4}" text-anchor="end" font-size="11.5" fill="var(--muted)">${v}</text>`;});
+  dist.forEach((n,k)=>{
+    const cx=L+band*k+band/2,h=n/10*ph,y=T+ph-h;
+    if(n>0)s+=`<rect x="${cx-bw/2}" y="${y}" width="${bw}" height="${h}" fill="${k===m?'var(--gold)':'var(--ink)'}"/>`;
+    s+=`<text x="${cx}" y="${y-6}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="var(--text)">${n}</text>`;
+    s+=`<text x="${cx}" y="${T+ph+20}" text-anchor="middle" font-size="${fs+1}" font-weight="700" fill="var(--text)">${sign(VALS[k])}</text>`;
+    s+=`<text x="${cx}" y="${T+ph+40}" text-anchor="middle" font-size="11.5" fill="var(--muted)">${fmt(n/mx)} pt</text>`;
+    if(chosen===VALS[k])s+=`<rect x="${cx-band/2+2}" y="${T-8}" width="${band-4}" height="${ph+56}" fill="none" stroke="var(--ink)" stroke-width="2"/>`;
+  });
+  s+=`<line x1="${L}" x2="${Wd-R}" y1="${T+ph}" y2="${T+ph}" stroke="var(--ink)" stroke-width="1.5"/>`;
+  return s+'</svg>';
+}
+function hbarSVG(rows,gold,narrow,legend){
+  const Wd=narrow?320:560,L=narrow?8:170,R=narrow?52:60,rh=narrow?54:40,T=legend?34:10,Bm=28;
+  const H=T+rows.length*rh+Bm,pw=Wd-L-R;
+  let s=`<svg viewBox="0 0 ${Wd} ${H}" role="img" style="${FONT}">`;
+  if(legend)s+=`<rect x="8" y="10" width="12" height="12" fill="var(--gold)"/><text x="26" y="20" font-size="12" fill="var(--text)">${legend}</text>`;
+  [0,50,100].forEach(v=>{const x=L+v/100*pw;s+=`<line x1="${x}" x2="${x}" y1="${T}" y2="${T+rows.length*rh}" stroke="var(--line2)"/><text x="${x}" y="${H-8}" text-anchor="middle" font-size="11.5" fill="var(--muted)">${v} %</text>`;});
+  rows.forEach((r,i)=>{
+    const y0=T+i*rh,bh=narrow?18:20,by=narrow?y0+26:y0+(rh-bh)/2;
+    if(narrow)s+=`<text x="${L}" y="${y0+18}" font-size="12" font-weight="600" fill="var(--text)">${esc(r.label)}</text>`;
+    else s+=`<text x="${L-10}" y="${by+bh/2+4}" text-anchor="end" font-size="13" font-weight="600" fill="var(--text)">${esc(r.label)}</text>`;
+    if(r.value===null){s+=`<text x="${L+4}" y="${by+bh/2+4}" font-size="12" fill="var(--muted)">Sin respuestas</text>`;}
+    else{const w=Math.max(r.value/100*pw,r.value>0?2:0);s+=`<rect x="${L}" y="${by}" width="${w}" height="${bh}" fill="${i===gold?'var(--gold)':'var(--ink)'}"/><text x="${L+w+6}" y="${by+bh/2+4}" font-size="12.5" font-weight="700" fill="var(--text)">${Math.round(r.value)} %</text>`;}
+  });
+  return s+'</svg>';
+}
+function flowSVG(narrow){
+  const boxes=[['Contexto','Caso compartido'],['Consideración','+ Hallazgo'],['Pregunta','¿Cómo cambia?'],['Escala','−2 a +2']];
+  let s;
+  if(!narrow){
+    const Wd=560,H=130,bw=112,gap=(Wd-4*bw)/3,y=24,bh=72;
+    s=`<svg viewBox="0 0 ${Wd} ${H}" role="img" aria-label="Flujo de lectura de un ítem" style="${FONT}">`;
+    boxes.forEach((b,k)=>{const x=k*(bw+gap),hl=k===1;
+      s+=`<rect x="${x+.5}" y="${y}" width="${bw-1}" height="${bh}" fill="${hl?'var(--navy)':'var(--s1)'}" stroke="${hl?'var(--navy)':'var(--ink)'}"/>`;
+      s+=`<text x="${x+bw/2}" y="${y+32}" text-anchor="middle" font-size="13" font-weight="700" fill="${hl?'var(--on-navy)':'var(--text)'}">${b[0]}</text><text x="${x+bw/2}" y="${y+52}" text-anchor="middle" font-size="12" fill="${hl?'var(--on-navy)':'var(--muted)'}">${b[1]}</text>`;
+      if(k<3){const ax=x+bw+4,ex=x+bw+gap-6;s+=`<line x1="${ax}" x2="${ex}" y1="${y+bh/2}" y2="${y+bh/2}" stroke="var(--ink)" stroke-width="1.5"/><path d="M${ex} ${y+bh/2-5} L${ex+5} ${y+bh/2} L${ex} ${y+bh/2+5} Z" fill="var(--ink)"/>`;}
+    });
+    s+=`<text x="280" y="122" text-anchor="middle" font-size="12" fill="var(--muted)">Cada par consideración + hallazgo se lee solo contra el contexto</text>`;
+  }else{
+    const Wd=320,bw=220,bh=58,gap=28,x=50,H=4*bh+3*gap+10;
+    s=`<svg viewBox="0 0 ${Wd} ${H}" role="img" aria-label="Flujo de lectura de un ítem" style="${FONT}">`;
+    boxes.forEach((b,k)=>{const y=5+k*(bh+gap),hl=k===1;
+      s+=`<rect x="${x}" y="${y}" width="${bw}" height="${bh}" fill="${hl?'var(--navy)':'var(--s1)'}" stroke="${hl?'var(--navy)':'var(--ink)'}"/>`;
+      s+=`<text x="${x+bw/2}" y="${y+25}" text-anchor="middle" font-size="13" font-weight="700" fill="${hl?'var(--on-navy)':'var(--text)'}">${b[0]}</text><text x="${x+bw/2}" y="${y+43}" text-anchor="middle" font-size="12" fill="${hl?'var(--on-navy)':'var(--muted)'}">${b[1]}</text>`;
+      if(k<3){const ay=y+bh+3,ey=y+bh+gap-8;s+=`<line x1="160" x2="160" y1="${ay}" y2="${ey}" stroke="var(--ink)" stroke-width="1.5"/><path d="M155 ${ey} L160 ${ey+5} L165 ${ey} Z" fill="var(--ink)"/>`;}
+    });
+  }
+  return s+'</svg>';
+}
+let bucket=null;
+function isNarrow(){return $('wBody').clientWidth<560}
+function drawCharts(){
+  const n=isNarrow();bucket=n;
+  document.querySelectorAll('[data-chart]').forEach(f=>{
+    const t=f.dataset.chart,box=f.querySelector('.cv');
+    if(t==='flow')box.innerHTML=flowSVG(n);
+    else if(t==='ex')box.innerHTML=distSVG([0,0,1,4,5],1,n);
+    else if(t==='dist'){const i=+f.dataset.i;box.innerHTML=distSVG(ITEMS[i].dist,st.ans[i],n);}
+    else if(t==='dir'){const d=dirData();box.innerHTML=hbarSVG(d.rows,d.low,n,d.low>=0?'Categoría con menor puntaje':null);}
+    else if(t==='tema'){box.innerHTML=hbarSVG(temaData(),-1,n,null);}
+  });
+}
+let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{if(isNarrow()!==bucket)drawCharts()},150)});
+
+/* ---------- Ventanas ---------- */
+function g1(){return `
+<h1>¿Qué es un Test de Concordancia Script?</h1>
+<p class="lede">Una forma de practicar el razonamiento clínico del nutricionista cuando la información es incompleta.</p>
+<div class="prose">
+<p>Cuando atiendes a una persona, partes con una idea: una hipótesis sobre lo que pasa, una evaluación que quieres aplicar o una indicación que piensas dar. Luego aparece un dato nuevo. Razonar bien es decidir si ese dato <u>refuerza</u>, <u>debilita</u> o <u>no cambia</u> tu idea.</p>
+<p>Los clínicos con experiencia organizan lo que saben en <span class="em">scripts</span>: guiones mentales que les dicen qué esperar en cada condición. Una persona con diabetes descompensada “debería” tener cierto patrón de consumo; una con reflujo, ciertos gatillantes. El TCS compara tus guiones con los de un panel de nutricionistas expertos.</p>
+<p>Por eso no hay una única respuesta correcta. Si eliges lo que eligió la mayoría del panel, obtienes el puntaje completo; si eliges una opción que eligieron algunos expertos, obtienes puntaje parcial.</p>
+</div>
+<div class="card"><h3>Idea clave</h3><p>No te preguntan qué es verdad. Te preguntan cuánto cambia tu idea con el dato nuevo.</p></div>
+<div class="tbl-wrap"><table class="stack"><thead><tr><th>Aspecto</th><th>Pregunta tradicional</th><th>Ítem de TCS</th></tr></thead><tbody>
+<tr><td data-label="Aspecto">Qué pregunta</td><td data-label="Tradicional">¿Cuál es la recomendación de sodio?</td><td data-label="TCS">¿Cuánto cambia tu hipótesis con este dato?</td></tr>
+<tr><td data-label="Aspecto">Respuesta</td><td data-label="Tradicional">Una sola correcta</td><td data-label="TCS">Varias aceptables, con distinto puntaje</td></tr>
+<tr><td data-label="Aspecto">Qué mide</td><td data-label="Tradicional">Conocimiento</td><td data-label="TCS">Interpretación de datos en incertidumbre</td></tr>
+</tbody></table></div>`}
+function g2(){return `
+<h1>Cómo se lee un ítem</h1>
+<p class="lede">Cada ítem tiene cuatro partes y se lee siempre en el mismo orden.</p>
+<figure class="fig" data-chart="flow"><div class="cv"></div><figcaption><b>Figura 1.</b> Flujo de lectura de un ítem de TCS.</figcaption></figure>
+<div class="prose">
+<p><span class="em">Contexto.</span> El caso clínico. Lo comparten todos los ítems del mismo caso.</p>
+<p><span class="em">Consideración.</span> Empieza con “Si estuvieras considerando…”. Puede ser una hipótesis, una evaluación o una intervención.</p>
+<p><span class="em">Hallazgo.</span> El dato nuevo. Lo lees como si acabaras de obtenerlo.</p>
+<p><span class="em">Pregunta y escala.</span> Marcas de −2 a +2 cuánto cambia la consideración.</p>
+</div>
+<div class="tbl-wrap"><table class="stack"><thead><tr><th>Tipo de ítem</th><th>Qué significa la escala</th></tr></thead><tbody>
+<tr><td data-label="Tipo">Hipótesis</td><td data-label="Escala">Cuánto más o menos <u>probable</u> se vuelve la idea.</td></tr>
+<tr><td data-label="Tipo">Evaluación o intervención</td><td data-label="Escala">Cuánto más o menos <u>pertinente</u> se vuelve aplicarla o indicarla.</td></tr>
+</tbody></table></div>
+<div class="card"><h3>Tres reglas</h3>
+<p>Los ítems con la etiqueta <span class="tag alert">Seguridad clínica</span> involucran un riesgo para la persona; léelos con especial cuidado.</p>
+<p>Cada ítem es independiente: el hallazgo de un ítem no se arrastra al siguiente, aunque compartan el caso.</p>
+<p>Al confirmar tu respuesta, esta queda bloqueada.</p></div>`}
+function g3(){return `
+<h1>Cómo se puntúa</h1>
+<p class="lede">El puntaje depende de cuántos expertos eligieron tu misma opción.</p>
+<div class="prose"><p>La opción más elegida por el panel (la <span class="em">moda</span>) vale 1 punto. Cada otra opción vale el número de expertos que la eligió dividido por el número de expertos de la moda. Una opción que nadie eligió vale 0.</p></div>
+<figure class="fig" data-chart="ex"><div class="cv"></div><figcaption><b>Figura 2.</b> Distribución de ejemplo de un panel de 10 expertos. Si respondes +1, obtienes 0,8 puntos.</figcaption></figure>
+<div class="tbl-wrap"><table class="stack"><thead><tr><th>Opción</th><th class="num">Expertos</th><th>Cálculo</th><th class="num">Puntos</th></tr></thead><tbody>
+<tr><td data-label="Opción">+2</td><td class="num" data-label="Expertos">5</td><td data-label="Cálculo">5 ÷ 5 (moda)</td><td class="num" data-label="Puntos">1</td></tr>
+<tr><td data-label="Opción">+1</td><td class="num" data-label="Expertos">4</td><td data-label="Cálculo">4 ÷ 5</td><td class="num" data-label="Puntos">0,8</td></tr>
+<tr><td data-label="Opción">0</td><td class="num" data-label="Expertos">1</td><td data-label="Cálculo">1 ÷ 5</td><td class="num" data-label="Puntos">0,2</td></tr>
+<tr><td data-label="Opción">−1 y −2</td><td class="num" data-label="Expertos">0</td><td data-label="Cálculo">0 ÷ 5</td><td class="num" data-label="Puntos">0</td></tr>
+</tbody></table></div>
+<div class="note">Las distribuciones de esta actividad son una referencia de práctica preparada por el docente; no corresponden a las respuestas de un panel real. El puntaje final suma los 10 ítems y se expresa de 0 a 100.</div>`}
+function g4(){
+  const steps=[
+   ['1 · Mecanismo','¿Qué une la constipación con la fibra? La fibra aumenta el volumen y la humedad de las deposiciones.'],
+   ['2 · Expectativa','Si la hipótesis fuera correcta, esperaría un consumo bajo de alimentos con fibra. El recordatorio muestra justo eso.'],
+   ['3 · Explicación alternativa','¿Hay otra causa que explique el dato? El patrón no depende de otra condición: el dato apunta directo a la hipótesis.'],
+   ['4 · Decisión','El hallazgo es lo que el guion predice y no tiene una explicación alternativa fuerte. Marco +2.']
+  ];
+  return `
+<h1>Cómo razonar un ítem</h1>
+<p class="lede">Antes de marcar, hazte tres preguntas.</p>
+<div class="tbl-wrap"><table class="stack"><thead><tr><th>Pregunta</th><th>Qué buscas</th></tr></thead><tbody>
+<tr><td data-label="Pregunta">¿Cuál es el mecanismo?</td><td data-label="Qué buscas">Qué relación fisiológica o alimentaria une el hallazgo con la consideración.</td></tr>
+<tr><td data-label="Pregunta">¿Lo esperaba?</td><td data-label="Qué buscas">Si tu idea fuera correcta, ¿encontrarías este dato?</td></tr>
+<tr><td data-label="Pregunta">¿Hay otra explicación?</td><td data-label="Qué buscas">Un motivo distinto para el dato, que no toque tu idea.</td></tr>
+</tbody></table></div>
+<div class="tbl-wrap"><table class="stack"><thead><tr><th>Marca</th><th>Cuándo</th></tr></thead><tbody>
+<tr><td data-label="Marca">0</td><td data-label="Cuándo">El dato no se relaciona con el mecanismo de la consideración, o la deja igual.</td></tr>
+<tr><td data-label="Marca">+1 o −1</td><td data-label="Cuándo">El dato apunta en una dirección, pero tiene otras explicaciones o es incompleto.</td></tr>
+<tr><td data-label="Marca">+2 o −2</td><td data-label="Cuándo">El dato es casi decisivo, o revela un riesgo que obliga a cambiar la conducta.</td></tr>
+</tbody></table></div>
+<h2>Ejemplo resuelto</h2>
+<div class="block ctx"><span class="lbl">Contexto</span><p>Mujer de 30 años consulta por constipación de 6 meses, con 2 deposiciones por semana.</p></div>
+<div class="block"><span class="lbl">Consideración</span><p>Si estuvieras considerando que su constipación se relaciona con un bajo consumo de fibra</p></div>
+<div class="block find"><span class="lbl">Hallazgo</span><p>El recordatorio de 24 horas muestra pan blanco, arroz blanco y ninguna fruta ni verdura.</p></div>
+<div class="steps">${steps.slice(0,reveal).map(s=>`<div class="step"><div class="lbl">${s[0]}</div><p>${s[1]}</p></div>`).join('')}</div>
+${reveal<4?`<div class="row"><button class="btn sec" data-act="reveal">Ver paso ${reveal+1} de 4</button></div>`:''}`}
+
+function actHTML(i){
+  const it=ITEMS[i],c=CASES[it.caso],a=st.ans[i],done=a!==undefined,labs=it.tipo==='hip'?LAB_HIP:LAB_PER;
+  const cur=done?a:pending,q=it.tipo==='hip'?QHIP:QPER[it.tipo];
+  let h=`<div class="tags"><span class="tag">${TIPOS[it.tipo]}</span><span class="tag">${esc(it.tema)}</span>${it.seg?'<span class="tag alert">Seguridad clínica</span>':''}</div>
+<h1>Caso ${it.caso} · ${c.tema}</h1>
+<div class="block ctx"><span class="lbl">Contexto del caso</span><p>${esc(c.ctx)}</p></div>
+<div class="block"><span class="lbl">Consideración</span><p>${esc(it.con)}</p></div>
+<div class="block find"><span class="lbl">Hallazgo</span><p>${esc(it.hal)}</p></div>
+<p class="question" id="q${i}">${q}</p>
+<div class="scale" role="radiogroup" aria-labelledby="q${i}">${VALS.map((v,k)=>`<button class="opt" role="radio" data-act="opt" data-v="${v}" aria-checked="${cur===v}" ${done?'disabled':''}><b>${sign(v)}</b><span>${labs[k]}</span></button>`).join('')}</div>`;
+  if(!done){
+    h+=`<div class="row"><button class="btn" data-act="confirm" ${pending===null?'disabled':''}>Confirmar respuesta</button><button class="btn sec" data-act="hint" aria-expanded="${hintOpen}">${hintOpen?'Ocultar pista':'Ver pista de razonamiento'}</button></div>`;
+    if(hintOpen)h+=`<div class="card"><h3>Pista de razonamiento</h3><p><span class="em">Repasa:</span> ${esc(it.rep)}</p><p>¿Qué mecanismo une la consideración con el hallazgo? Si tu idea fuera correcta, ¿esperarías este dato? ¿Hay otra explicación para el hallazgo que no toque tu idea?</p></div>`;
+  }else{
+    const sc=score(it,a);
+    const fr=sc===1?'Coincides con la opción que eligió la mayoría del panel.':sc>=.5?'Tu respuesta es compartida por una parte importante del panel.':sc>0?'Pocos expertos eligieron tu opción.':'Ningún experto eligió tu opción. Revisa la explicación.';
+    h+=`<section class="fb" aria-label="Retroalimentación"><div class="fbhead"><div class="kpi"><small>Puntaje del ítem</small><b>${fmt(sc)}</b></div><p>${fr}</p></div>
+<figure class="fig" data-chart="dist" data-i="${i}"><div class="cv"></div><figcaption><b>Figura ${i+3}.</b> Expertos (N = 10) por opción en la actividad ${i+1}; bajo cada opción, los puntos que otorga.</figcaption></figure>
+<div class="prose"><p>${esc(it.exp)}</p></div>
+<div class="card"><h3>Clave de la clase</h3><p>${esc(it.clave)}</p></div>
+<p class="src">Fuente: ${esc(it.src)}</p></section>`;
+  }
+  return h;
+}
+const DIR=[{label:'Hallazgo que refuerza',f:it=>modeIdx(it.dist)>2,msg:'Te cuesta reconocer cuándo un dato confirma lo que esperabas. Pregúntate si el hallazgo es justo lo que tu guion predice para esa condición.'},
+ {label:'Hallazgo neutral',f:it=>modeIdx(it.dist)===2,msg:'Tiendes a mover la escala con datos que no cambian la decisión. Antes de marcar, revisa si el hallazgo toca el mecanismo de la consideración o evalúa otra cosa.'},
+ {label:'Hallazgo que debilita',f:it=>modeIdx(it.dist)<2,msg:'Te cuesta descartar. Busca el dato que contradice la idea o la vuelve riesgosa, en especial en los ítems de seguridad clínica.'}];
+function pct(idx){const a=idx.filter(i=>st.ans[i]!==undefined);if(!a.length)return null;return a.reduce((s,i)=>s+score(ITEMS[i],st.ans[i]),0)/a.length*100;}
+function dirData(){const rows=DIR.map(d=>({label:d.label,value:pct(ITEMS.map((it,i)=>d.f(it)?i:-1).filter(i=>i>=0))}));let low=-1,lv=Infinity;rows.forEach((r,k)=>{if(r.value!==null&&r.value<lv){lv=r.value;low=k}});return{rows,low};}
+function temaData(){return [1,2,3,4].map(c=>({label:CASES[c].tema,value:pct(ITEMS.map((it,i)=>it.caso===c?i:-1).filter(i=>i>=0))}));}
+function resHTML(){
+  const n=answered(),pts=ITEMS.reduce((s,it,i)=>s+(st.ans[i]!==undefined?score(it,st.ans[i]):0),0);
+  const hits=ITEMS.filter((it,i)=>st.ans[i]!==undefined&&score(it,st.ans[i])===1).length;
+  const d=dirData();
+  let h=`<h1>Resultados</h1><p class="lede">${n===0?'Aún no respondes actividades. Tus resultados aparecerán aquí a medida que avances.':n<10?'Llevas '+n+' de 10 actividades. El puntaje considera 0 puntos para las que faltan.':'Completaste las 10 actividades.'}</p>
+<div class="kpis"><div class="kpi"><small>Puntaje</small><b>${Math.round(pts/10*100)}</b><span class="src">de 100</span></div><div class="kpi"><small>Respondidas</small><b>${n}/10</b></div><div class="kpi"><small>Puntos</small><b>${fmt(pts)}</b><span class="src">de 10</span></div><div class="kpi"><small>Coincidencias con la moda</small><b>${hits}</b></div></div>
+<figure class="fig" data-chart="dir"><div class="cv"></div><figcaption><b>Figura 13.</b> Puntaje promedio (% del máximo) en las actividades respondidas, según hacia dónde mueve el hallazgo la consideración.</figcaption></figure>`;
+  if(d.low>=0)h+=`<div class="card"><h3>Qué practicar</h3><p><span class="em">${DIR[d.low].label}.</span> ${DIR[d.low].msg}</p></div>`;
+  h+=`<figure class="fig" data-chart="tema"><div class="cv"></div><figcaption><b>Figura 14.</b> Puntaje promedio (% del máximo) por caso clínico.</figcaption></figure>
+<h2>Detalle por actividad</h2>
+<div class="tbl-wrap"><table class="stack"><thead><tr><th>Actividad</th><th>Tema</th><th class="num">Tu respuesta</th><th class="num">Moda</th><th class="num">Puntos</th></tr></thead><tbody>
+${ITEMS.map((it,i)=>{const a=st.ans[i];return `<tr><td data-label="Actividad"><button class="linkbtn" data-act="goto" data-w="${4+i}"><span>Act. ${i+1}</span></button></td><td data-label="Tema">${CASES[it.caso].corto} · ${esc(it.tema)}</td><td class="num" data-label="Tu respuesta">${a===undefined?'—':sign(a)}</td><td class="num" data-label="Moda">${sign(VALS[modeIdx(it.dist)])}</td><td class="num" data-label="Puntos">${a===undefined?'—':fmt(score(it,a))}</td></tr>`}).join('')}
+</tbody></table></div>
+<div class="note">Tu avance se guarda solo en este navegador. Las distribuciones son una referencia de práctica, no un panel real.</div>`;
+  if(!resetAsk)h+=`<div class="row"><button class="btn sec" data-act="reset" ${n===0?'disabled':''}>Borrar mis respuestas</button></div>`;
+  else h+=`<div class="confirmbox" role="alertdialog" aria-label="Confirmar borrado"><p class="em">¿Borrar tus ${n} respuestas? Esta acción no se puede deshacer.</p><div class="row"><button class="btn" data-act="reset-yes">Sí, borrar</button><button class="btn sec" data-act="reset-no">Cancelar</button></div></div>`;
+  return h;
+}
+const GLOS=[
+ ['Script','Guion mental que organiza lo que un clínico espera encontrar en una condición.'],
+ ['Panel de expertos','Grupo de profesionales con experiencia cuyas respuestas sirven de referencia en un TCS.'],
+ ['Moda','Opción de la escala más elegida por el panel; vale 1 punto.'],
+ ['Método agregado','Forma de puntuar que da puntaje parcial según cuántos expertos eligieron cada opción.'],
+ ['Recordatorio de 24 horas','Encuesta en que la persona relata todo lo que comió y bebió el día anterior.'],
+ ['HbA1c','Hemoglobina glicosilada; refleja la glicemia promedio de los últimos 2 a 3 meses.'],
+ ['Insulina NPH','Insulina de acción intermedia; administrada de noche, su efecto máximo ocurre en la madrugada.'],
+ ['Hipoglicemia','Glicemia bajo 70 mg/dL, con síntomas como sudoración, temblor o confusión.'],
+ ['Circunferencia de cintura','Medición antropométrica que estima la grasa abdominal y el riesgo cardiometabólico.'],
+ ['Patrón DASH','Alimentación rica en frutas, verduras, lácteos descremados y granos integrales, con poco sodio, usada en hipertensión.'],
+ ['Hiperkalemia','Potasio sérico elevado; puede causar arritmias.'],
+ ['IECA','Inhibidor de la enzima convertidora de angiotensina, como el enalapril; reduce la excreción de potasio.'],
+ ['Espironolactona','Diurético antagonista de la aldosterona que retiene potasio.'],
+ ['Enfermedad celíaca','Enfermedad autoinmune desencadenada por el gluten que daña la mucosa del intestino delgado.'],
+ ['Contaminación cruzada','Presencia no intencional de gluten en un alimento que no lo contiene, durante su cultivo, procesamiento o preparación.'],
+ ['Ferritina','Proteína que refleja los depósitos de hierro del organismo.'],
+ ['ERGE','Enfermedad por reflujo gastroesofágico.'],
+ ['Pirosis','Sensación de ardor detrás del esternón, típica del reflujo.']
+];
+function gloHTML(){return `<h1>Glosario</h1><p class="lede">Términos usados en las guías y en los casos.</p><dl class="glos">${GLOS.map(g=>`<dt>${g[0]}</dt><dd>${g[1]}</dd>`).join('')}</dl>`}
+
+function wLabel(w){
+  if(w.k==='g')return['Guía '+w.n+' de 4',w.t];
+  if(w.k==='a')return['Actividad '+(w.i+1)+' de 10','Caso '+ITEMS[w.i].caso];
+  return[w.t,''];
+}
+function render(){
+  const w=W[st.cur],[t1,t2]=wLabel(w);
+  $('wTitle').textContent=t1+(t2?' · '+t2:'');$('wSub').textContent='';
+  $('topTitle').textContent=t1+(w.k==='g'?' · '+w.t:'');
+  $('topProg').textContent=answered()+'/10';
+  $('footL').textContent='Ventana '+(st.cur+1)+' de '+W.length;
+  let body='';
+  if(w.k==='g')body=[g1,g2,g3,g4][w.n-1]();
+  else if(w.k==='a')body=actHTML(w.i);
+  else if(w.k==='r')body=resHTML();
+  else body=gloHTML();
+  $('wBody').innerHTML=body;
+  $('prev').disabled=st.cur===0;
+  $('next').disabled=st.cur===W.length-1;
+  const lg=st.cur===3?'Comenzar las 10 actividades':(st.cur===13?'Ver resultados':'Siguiente');
+  const sm=st.cur===3?'Comenzar':(st.cur===13?'Resultados':'Siguiente');
+  $('nextLg').textContent=lg;$('nextSm').textContent=sm;
+  renderMap();drawCharts();
+}
+function renderMap(){
+  $('mapGuides').innerHTML=W.slice(0,4).map((w,k)=>`<button class="mlink" data-w="${k}" aria-current="${st.cur===k}">${w.n}. ${w.t}</button>`).join('');
+  $('mapActs').innerHTML=ITEMS.map((it,i)=>{const a=st.ans[i];let c='';if(a!==undefined){const s=score(it,a);c=s===1?'full':s>0?'part':'zero'}
+    return `<button class="${c}" data-w="${4+i}" aria-current="${st.cur===4+i}" aria-label="Actividad ${i+1}${a===undefined?', sin responder':', respondida'}">${i+1}</button>`}).join('');
+  $('mapEnd').innerHTML=[14,15].map(k=>`<button class="mlink" data-w="${k}" aria-current="${st.cur===k}">${W[k].t}</button>`).join('');
+}
+function go(k,scroll=true){
+  st.cur=k;pending=null;hintOpen=false;resetAsk=false;save();render();closeMap();
+  if(scroll)$('win').scrollIntoView({block:'start'});
+}
+$('prev').onclick=()=>{if(st.cur>0)go(st.cur-1)};
+$('next').onclick=()=>{if(st.cur<W.length-1)go(st.cur+1)};
+$('wBody').addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b)return;const act=b.dataset.act,w=W[st.cur];
+  if(act==='opt'&&w.k==='a'&&st.ans[w.i]===undefined){pending=+b.dataset.v;render();const el=document.querySelector(`.opt[data-v="${pending}"]`);el&&el.focus();}
+  else if(act==='confirm'&&pending!==null){st.ans[w.i]=pending;pending=null;hintOpen=false;save();render();const fb=document.querySelector('.fb');fb&&fb.scrollIntoView({block:'start',behavior:'smooth'});}
+  else if(act==='hint'){hintOpen=!hintOpen;render();}
+  else if(act==='reveal'){reveal=Math.min(4,reveal+1);render();}
+  else if(act==='goto'){go(+b.dataset.w);}
+  else if(act==='reset'){resetAsk=true;render();}
+  else if(act==='reset-no'){resetAsk=false;render();}
+  else if(act==='reset-yes'){st.ans={};resetAsk=false;save();render();}
+});
+$('map').addEventListener('click',e=>{const b=e.target.closest('[data-w]');if(b)go(+b.dataset.w)});
+function openMap(){$('map').classList.add('open');$('scrim').hidden=false;$('openMap').setAttribute('aria-expanded','true');const f=$('map').querySelector('[aria-current="true"]');f&&f.focus();}
+function closeMap(){if(!$('map').classList.contains('open'))return;$('map').classList.remove('open');$('scrim').hidden=true;$('openMap').setAttribute('aria-expanded','false');}
+$('openMap').onclick=openMap;$('closeMap').onclick=()=>{closeMap();$('openMap').focus()};$('scrim').onclick=closeMap;
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMap()});
+render();
+</script>
